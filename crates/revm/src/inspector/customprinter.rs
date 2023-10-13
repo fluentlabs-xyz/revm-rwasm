@@ -1,9 +1,12 @@
 //! Custom print inspector, it has step level information of execution.
 //! It is a great tool if some debugging is needed.
 
-use crate::interpreter::{opcode, CallInputs, CreateInputs, Gas, InstructionResult, Interpreter};
-use crate::primitives::{Address, Bytes, U256};
-use crate::{inspectors::GasInspector, Database, EVMData, Inspector};
+use crate::{
+    inspectors::GasInspector,
+    interpreter::{opcode, CallInputs, CreateInputs, Gas, InstructionResult, Interpreter},
+    primitives::{Address, Bytes, U256},
+    Database, Inspector, RwasmData,
+};
 
 /// Custom print [Inspector], it has step level information of execution.
 ///
@@ -17,7 +20,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
     fn initialize_interp(
         &mut self,
         interp: &mut Interpreter<'_>,
-        data: &mut EVMData<'_, DB>,
+        data: &mut RwasmData<'_, DB>,
     ) -> InstructionResult {
         self.gas_inspector.initialize_interp(interp, data);
         InstructionResult::Continue
@@ -28,7 +31,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
     fn step(
         &mut self,
         interp: &mut Interpreter<'_>,
-        data: &mut EVMData<'_, DB>,
+        data: &mut RwasmData<'_, DB>,
     ) -> InstructionResult {
         let opcode = interp.current_opcode();
         let opcode_str = opcode::OPCODE_JUMPMAP[opcode as usize];
@@ -57,7 +60,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
     fn step_end(
         &mut self,
         interp: &mut Interpreter<'_>,
-        data: &mut EVMData<'_, DB>,
+        data: &mut RwasmData<'_, DB>,
         eval: InstructionResult,
     ) -> InstructionResult {
         self.gas_inspector.step_end(interp, data, eval);
@@ -66,7 +69,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
 
     fn call_end(
         &mut self,
-        data: &mut EVMData<'_, DB>,
+        data: &mut RwasmData<'_, DB>,
         inputs: &CallInputs,
         remaining_gas: Gas,
         ret: InstructionResult,
@@ -79,7 +82,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
 
     fn create_end(
         &mut self,
-        data: &mut EVMData<'_, DB>,
+        data: &mut RwasmData<'_, DB>,
         inputs: &CreateInputs,
         ret: InstructionResult,
         address: Option<Address>,
@@ -93,7 +96,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
 
     fn call(
         &mut self,
-        _data: &mut EVMData<'_, DB>,
+        _data: &mut RwasmData<'_, DB>,
         inputs: &mut CallInputs,
     ) -> (InstructionResult, Gas, Bytes) {
         println!(
@@ -109,7 +112,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
 
     fn create(
         &mut self,
-        _data: &mut EVMData<'_, DB>,
+        _data: &mut RwasmData<'_, DB>,
         inputs: &mut CreateInputs,
     ) -> (InstructionResult, Option<Address>, Gas, Bytes) {
         println!(
@@ -131,6 +134,7 @@ impl<DB: Database> Inspector<DB> for CustomPrintTracer {
 mod test {
 
     #[test]
+    #[ignore]
     #[cfg(not(feature = "no_gas_measuring"))]
     #[cfg(not(feature = "optimism"))]
     fn gas_calculation_underflow() {

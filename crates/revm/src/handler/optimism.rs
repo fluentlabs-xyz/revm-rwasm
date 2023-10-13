@@ -1,14 +1,13 @@
 //! Handler related to Optimism chain
 
-use core::ops::Mul;
-
 use super::mainnet;
 use crate::{
     interpreter::{return_ok, return_revert, Gas, InstructionResult},
     optimism,
     primitives::{db::Database, EVMError, Env, Spec, SpecId::REGOLITH, U256},
-    EVMData,
+    RwasmData,
 };
+use core::ops::Mul;
 
 /// Handle output of the transaction
 pub fn handle_call_return<SPEC: Spec>(
@@ -32,13 +31,12 @@ pub fn handle_call_return<SPEC: Spec>(
             //
             // Hardfork Behavior:
             // - Bedrock (success path):
-            //   - Deposit transactions (non-system) report their gas limit as the usage.
-            //     No refunds.
+            //   - Deposit transactions (non-system) report their gas limit as the usage. No
+            //     refunds.
             //   - Deposit transactions (system) report 0 gas used. No refunds.
             //   - Regular transactions report gas usage as normal.
             // - Regolith (success path):
-            //   - Deposit transactions (all) report their gas used as normal. Refunds
-            //     enabled.
+            //   - Deposit transactions (all) report their gas used as normal. Refunds enabled.
             //   - Regular transactions report their gas used as normal.
             if is_optimism && (!is_deposit || is_regolith) {
                 // For regular transactions prior to Regolith and all transactions after
@@ -57,12 +55,12 @@ pub fn handle_call_return<SPEC: Spec>(
             //
             // Hardfork Behavior:
             // - Bedrock (revert path):
-            //   - Deposit transactions (all) report the gas limit as the amount of gas
-            //     used on failure. No refunds.
+            //   - Deposit transactions (all) report the gas limit as the amount of gas used on
+            //     failure. No refunds.
             //   - Regular transactions receive a refund on remaining gas as normal.
             // - Regolith (revert path):
-            //   - Deposit transactions (all) report the actual gas used as the amount of
-            //     gas used on failure. Refunds on remaining gas enabled.
+            //   - Deposit transactions (all) report the actual gas used as the amount of gas used
+            //     on failure. Refunds on remaining gas enabled.
             //   - Regular transactions receive a refund on remaining gas as normal.
             if is_optimism && (!is_deposit || is_regolith) {
                 gas.erase_cost(returned_gas.remaining());
@@ -89,7 +87,7 @@ pub fn calculate_gas_refund<SPEC: Spec>(env: &Env, gas: &Gas) -> u64 {
 /// Reward beneficiary with gas fee.
 #[inline]
 pub fn reward_beneficiary<SPEC: Spec, DB: Database>(
-    data: &mut EVMData<'_, DB>,
+    data: &mut RwasmData<'_, DB>,
     gas: &Gas,
     gas_refund: u64,
 ) -> Result<(), EVMError<DB::Error>> {
@@ -140,10 +138,8 @@ pub fn reward_beneficiary<SPEC: Spec, DB: Database>(
 
 #[cfg(test)]
 mod tests {
-    use crate::primitives::{BedrockSpec, RegolithSpec};
-
     use super::*;
-    use crate::primitives::B256;
+    use crate::primitives::{BedrockSpec, RegolithSpec, B256};
 
     #[test]
     fn test_revert_gas() {

@@ -1,8 +1,11 @@
 //! GasIspector. Helper Inspector to calculate gas for others.
 
-use crate::interpreter::{CallInputs, CreateInputs, Gas, InstructionResult};
-use crate::primitives::{db::Database, Address, Bytes};
-use crate::{evm_impl::EVMData, Inspector};
+use crate::{
+    interpreter::{CallInputs, CreateInputs, Gas, InstructionResult},
+    primitives::{db::Database, Address, Bytes},
+    rwasm_impl::RwasmData,
+    Inspector,
+};
 
 /// Helper [Inspector] that keeps track of gas.
 #[allow(dead_code)]
@@ -27,7 +30,7 @@ impl<DB: Database> Inspector<DB> for GasInspector {
     fn initialize_interp(
         &mut self,
         interp: &mut crate::interpreter::Interpreter<'_>,
-        _data: &mut EVMData<'_, DB>,
+        _data: &mut RwasmData<'_, DB>,
     ) -> InstructionResult {
         self.gas_remaining = interp.gas.limit();
         InstructionResult::Continue
@@ -37,7 +40,7 @@ impl<DB: Database> Inspector<DB> for GasInspector {
     fn step_end(
         &mut self,
         interp: &mut crate::interpreter::Interpreter<'_>,
-        _data: &mut EVMData<'_, DB>,
+        _data: &mut RwasmData<'_, DB>,
         _eval: InstructionResult,
     ) -> InstructionResult {
         let last_gas = core::mem::replace(&mut self.gas_remaining, interp.gas.remaining());
@@ -47,7 +50,7 @@ impl<DB: Database> Inspector<DB> for GasInspector {
 
     fn call_end(
         &mut self,
-        _data: &mut EVMData<'_, DB>,
+        _data: &mut RwasmData<'_, DB>,
         _inputs: &CallInputs,
         mut remaining_gas: Gas,
         ret: InstructionResult,
@@ -64,7 +67,7 @@ impl<DB: Database> Inspector<DB> for GasInspector {
 
     fn create_end(
         &mut self,
-        _data: &mut EVMData<'_, DB>,
+        _data: &mut RwasmData<'_, DB>,
         _inputs: &CreateInputs,
         ret: InstructionResult,
         address: Option<Address>,
@@ -77,9 +80,12 @@ impl<DB: Database> Inspector<DB> for GasInspector {
 
 #[cfg(test)]
 mod tests {
-    use crate::interpreter::{CallInputs, CreateInputs, Gas, InstructionResult, Interpreter};
-    use crate::primitives::{Address, Bytes, B256};
-    use crate::{inspectors::GasInspector, Database, EVMData, Inspector};
+    use crate::{
+        inspectors::GasInspector,
+        interpreter::{CallInputs, CreateInputs, Gas, InstructionResult, Interpreter},
+        primitives::{Address, Bytes, B256},
+        Database, Inspector, RwasmData,
+    };
 
     #[derive(Default, Debug)]
     struct StackInspector {
@@ -92,7 +98,7 @@ mod tests {
         fn initialize_interp(
             &mut self,
             interp: &mut Interpreter<'_>,
-            data: &mut EVMData<'_, DB>,
+            data: &mut RwasmData<'_, DB>,
         ) -> InstructionResult {
             self.gas_inspector.initialize_interp(interp, data);
             InstructionResult::Continue
@@ -101,7 +107,7 @@ mod tests {
         fn step(
             &mut self,
             interp: &mut Interpreter<'_>,
-            data: &mut EVMData<'_, DB>,
+            data: &mut RwasmData<'_, DB>,
         ) -> InstructionResult {
             self.pc = interp.program_counter();
             self.gas_inspector.step(interp, data);
@@ -110,7 +116,7 @@ mod tests {
 
         fn log(
             &mut self,
-            evm_data: &mut EVMData<'_, DB>,
+            evm_data: &mut RwasmData<'_, DB>,
             address: &Address,
             topics: &[B256],
             data: &Bytes,
@@ -121,7 +127,7 @@ mod tests {
         fn step_end(
             &mut self,
             interp: &mut Interpreter<'_>,
-            data: &mut EVMData<'_, DB>,
+            data: &mut RwasmData<'_, DB>,
             eval: InstructionResult,
         ) -> InstructionResult {
             self.gas_inspector.step_end(interp, data, eval);
@@ -132,7 +138,7 @@ mod tests {
 
         fn call(
             &mut self,
-            data: &mut EVMData<'_, DB>,
+            data: &mut RwasmData<'_, DB>,
             call: &mut CallInputs,
         ) -> (InstructionResult, Gas, Bytes) {
             self.gas_inspector.call(data, call);
@@ -146,7 +152,7 @@ mod tests {
 
         fn call_end(
             &mut self,
-            data: &mut EVMData<'_, DB>,
+            data: &mut RwasmData<'_, DB>,
             inputs: &CallInputs,
             remaining_gas: Gas,
             ret: InstructionResult,
@@ -159,7 +165,7 @@ mod tests {
 
         fn create(
             &mut self,
-            data: &mut EVMData<'_, DB>,
+            data: &mut RwasmData<'_, DB>,
             call: &mut CreateInputs,
         ) -> (InstructionResult, Option<Address>, Gas, Bytes) {
             self.gas_inspector.create(data, call);
@@ -174,7 +180,7 @@ mod tests {
 
         fn create_end(
             &mut self,
-            data: &mut EVMData<'_, DB>,
+            data: &mut RwasmData<'_, DB>,
             inputs: &CreateInputs,
             status: InstructionResult,
             address: Option<Address>,
@@ -190,9 +196,11 @@ mod tests {
     #[test]
     #[cfg(not(feature = "optimism"))]
     fn test_gas_inspector() {
-        use crate::db::BenchmarkDB;
-        use crate::interpreter::{opcode, OpCode};
-        use crate::primitives::{address, Bytecode, Bytes, ResultAndState, TransactTo};
+        use crate::{
+            db::BenchmarkDB,
+            interpreter::{opcode, OpCode},
+            primitives::{address, Bytecode, Bytes, ResultAndState, TransactTo},
+        };
 
         let contract_data: Bytes = Bytes::from(vec![
             opcode::PUSH1,

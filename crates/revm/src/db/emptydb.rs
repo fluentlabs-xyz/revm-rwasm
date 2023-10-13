@@ -1,8 +1,8 @@
-use core::{convert::Infallible, fmt, marker::PhantomData};
-use revm_interpreter::primitives::{
+use crate::primitives::{
     db::{Database, DatabaseRef},
     AccountInfo, Address, Bytecode, B256, U256,
 };
+use core::{convert::Infallible, fmt, marker::PhantomData};
 
 /// An empty database that always returns default values when queried.
 pub type EmptyDB = EmptyDBTyped<Infallible>;

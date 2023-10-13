@@ -8,14 +8,15 @@
 extern crate alloc;
 
 pub mod db;
-mod evm;
-mod evm_impl;
 pub mod handler;
 mod inspector;
 mod journaled_state;
+mod rwasm;
+mod rwasm_impl;
 
 #[cfg(feature = "optimism")]
 pub mod optimism;
+mod tests;
 
 #[cfg(all(feature = "with-serde", not(feature = "serde")))]
 compile_error!("`with-serde` feature has been renamed to `serde`.");
@@ -27,30 +28,23 @@ pub type DummyStateDB = InMemoryDB;
 pub use db::{
     CacheState, DBBox, State, StateBuilder, StateDBBox, TransitionAccount, TransitionState,
 };
-
 pub use db::{Database, DatabaseCommit, DatabaseRef, InMemoryDB};
-pub use evm::{evm_inner, new, EVM};
-pub use evm_impl::{EVMData, EVMImpl, Transact, CALL_STACK_LIMIT};
-pub use journaled_state::{is_precompile, JournalCheckpoint, JournalEntry, JournaledState};
-
-// reexport `revm_precompiles`
-#[doc(inline)]
-pub use revm_precompile as precompile;
-
-// reexport `revm_interpreter`
-#[doc(inline)]
-pub use revm_interpreter as interpreter;
-
-// reexport `revm_primitives`
-#[doc(inline)]
-pub use revm_interpreter::primitives;
-
+pub use handler::Handler;
 // reexport inspector implementations
 pub use inspector::inspectors;
 pub use inspector::Inspector;
-
+pub use journaled_state::{is_precompile, JournalCheckpoint, JournalEntry, JournaledState};
 // export Optimism types, helpers, and constants
 #[cfg(feature = "optimism")]
 pub use optimism::{L1BlockInfo, BASE_FEE_RECIPIENT, L1_BLOCK_CONTRACT, L1_FEE_RECIPIENT};
-
-pub use handler::Handler;
+// reexport `revm_interpreter`
+#[doc(inline)]
+pub use revm_interpreter as interpreter;
+// reexport `revm_primitives`
+#[doc(inline)]
+pub use revm_interpreter::primitives;
+// reexport `revm_precompiles`
+#[doc(inline)]
+pub use revm_precompile as precompile;
+pub use rwasm::{evm_inner, new, EVM};
+pub use rwasm_impl::{RwasmData, RwasmImpl, Transact, CALL_STACK_LIMIT};

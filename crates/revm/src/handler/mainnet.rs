@@ -1,10 +1,8 @@
 //! Mainnet related handlers.
-use revm_interpreter::primitives::EVMError;
-
 use crate::{
     interpreter::{return_ok, return_revert, Gas, InstructionResult},
-    primitives::{db::Database, Env, Spec, SpecId::LONDON, U256},
-    EVMData,
+    primitives::{db::Database, EVMError, Env, Spec, SpecId::LONDON, U256},
+    RwasmData,
 };
 
 /// Handle output of the transaction
@@ -33,7 +31,7 @@ pub fn handle_call_return<SPEC: Spec>(
 
 #[inline]
 pub fn handle_reimburse_caller<SPEC: Spec, DB: Database>(
-    data: &mut EVMData<'_, DB>,
+    data: &mut RwasmData<'_, DB>,
     gas: &Gas,
     gas_refund: u64,
 ) -> Result<(), EVMError<DB::Error>> {
@@ -58,7 +56,7 @@ pub fn handle_reimburse_caller<SPEC: Spec, DB: Database>(
 /// Reward beneficiary with gas fee.
 #[inline]
 pub fn reward_beneficiary<SPEC: Spec, DB: Database>(
-    data: &mut EVMData<'_, DB>,
+    data: &mut RwasmData<'_, DB>,
     gas: &Gas,
     gas_refund: u64,
 ) -> Result<(), EVMError<DB::Error>> {
@@ -106,9 +104,8 @@ pub fn calculate_gas_refund<SPEC: Spec>(env: &Env, gas: &Gas) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use revm_interpreter::primitives::CancunSpec;
-
     use super::*;
+    use revm_interpreter::primitives::CancunSpec;
 
     #[test]
     fn test_consume_gas() {

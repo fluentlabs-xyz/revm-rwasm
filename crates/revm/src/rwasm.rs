@@ -1,13 +1,12 @@
-use crate::primitives::{specification, EVMError, EVMResult, Env, ExecutionResult};
 use crate::{
     db::{Database, DatabaseCommit, DatabaseRef},
-    evm_impl::{EVMImpl, Transact},
     inspectors::NoOpInspector,
+    primitives::{specification, EVMError, EVMResult, Env, ExecutionResult},
+    rwasm_impl::{RwasmImpl, Transact},
     Inspector,
 };
 use alloc::boxed::Box;
-use revm_interpreter::primitives::db::WrapDatabaseRef;
-use revm_interpreter::primitives::ResultAndState;
+use revm_interpreter::primitives::{db::WrapDatabaseRef, ResultAndState};
 use revm_precompile::Precompiles;
 
 /// Struct that takes Database and enabled transact to update state directly to database.
@@ -18,13 +17,16 @@ use revm_precompile::Precompiles;
 /// For transacting on EVM you can call transact_commit that will automatically apply changes to db.
 ///
 /// You can do a lot with rust and traits. For Database abstractions that we need you can implement,
-/// Database, DatabaseRef or Database+DatabaseCommit and they enable functionality depending on what kind of
-/// handling of struct you want.
-/// * Database trait has mutable self in its functions. It is usefully if on get calls you want to modify
+/// Database, DatabaseRef or Database+DatabaseCommit and they enable functionality depending on what
+/// kind of handling of struct you want.
+/// * Database trait has mutable self in its functions. It is usefully if on get calls you want to
+///   modify
 /// your cache or update some statistics. They enable `transact` and `inspect` functions
-/// * DatabaseRef takes reference on object, this is useful if you only have reference on state and don't
+/// * DatabaseRef takes reference on object, this is useful if you only have reference on state and
+///   don't
 /// want to update anything on it. It enabled `transact_ref` and `inspect_ref` functions
-/// * Database+DatabaseCommit allow directly committing changes of transaction. it enabled `transact_commit`
+/// * Database+DatabaseCommit allow directly committing changes of transaction. it enabled
+///   `transact_commit`
 /// and `inspect_commit`
 ///
 /// /// # Example
@@ -37,7 +39,6 @@ use revm_precompile::Precompiles;
 /// let evm: EVM<SomeDatabase> = EVM::new();
 /// assert!(evm.db.is_none());
 /// ```
-///
 #[derive(Clone, Debug)]
 pub struct EVM<DB> {
     pub env: Env,
@@ -205,7 +206,7 @@ pub fn evm_inner<'a, DB: Database, const INSPECT: bool>(
 ) -> Box<dyn Transact<DB::Error> + 'a> {
     macro_rules! create_evm {
         ($spec:ident) => {
-            Box::new(EVMImpl::<'a, $spec, DB, INSPECT>::new(
+            Box::new(RwasmImpl::<'a, $spec, DB, INSPECT>::new(
                 db,
                 env,
                 insp,

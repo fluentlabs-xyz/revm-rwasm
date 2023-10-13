@@ -2,19 +2,19 @@ pub mod mainnet;
 #[cfg(feature = "optimism")]
 pub mod optimism;
 
-use revm_interpreter::primitives::db::Database;
-use revm_interpreter::primitives::{EVMError, EVMResultGeneric};
-
-use crate::interpreter::{Gas, InstructionResult};
-use crate::primitives::{Env, Spec};
-use crate::EVMData;
+use crate::{
+    interpreter::{Gas, InstructionResult},
+    primitives::{Env, Spec},
+    RwasmData,
+};
+use revm_interpreter::primitives::{db::Database, EVMError, EVMResultGeneric};
 
 /// Handle call return and return final gas value.
 type CallReturnHandle = fn(&Env, InstructionResult, Gas) -> Gas;
 
 /// Reimburse the caller with ethereum it didn't spent.
 type ReimburseCallerHandle<DB> =
-    fn(&mut EVMData<'_, DB>, &Gas, u64) -> EVMResultGeneric<(), <DB as Database>::Error>;
+    fn(&mut RwasmData<'_, DB>, &Gas, u64) -> EVMResultGeneric<(), <DB as Database>::Error>;
 
 /// Reward beneficiary with transaction rewards.
 type RewardBeneficiaryHandle<DB> = ReimburseCallerHandle<DB>;
@@ -67,7 +67,7 @@ impl<DB: Database> Handler<DB> {
     /// Reimburse the caller with gas that were not spend.
     pub fn reimburse_caller(
         &self,
-        data: &mut EVMData<'_, DB>,
+        data: &mut RwasmData<'_, DB>,
         gas: &Gas,
         gas_refund: u64,
     ) -> Result<(), EVMError<DB::Error>> {
@@ -82,7 +82,7 @@ impl<DB: Database> Handler<DB> {
     /// Reward beneficiary
     pub fn reward_beneficiary(
         &self,
-        data: &mut EVMData<'_, DB>,
+        data: &mut RwasmData<'_, DB>,
         gas: &Gas,
         gas_refund: u64,
     ) -> Result<(), EVMError<DB::Error>> {

@@ -1,31 +1,34 @@
-use crate::handler::Handler;
-use crate::interpreter::{
-    analysis::to_analysed, gas, return_ok, CallContext, CallInputs, CallScheme, Contract,
-    CreateInputs, Gas, Host, InstructionResult, Interpreter, SelfDestructResult, SuccessOrHalt,
-    Transfer,
-};
-use crate::journaled_state::{is_precompile, JournalCheckpoint};
-use crate::primitives::{
-    keccak256, Address, AnalysisKind, Bytecode, Bytes, EVMError, EVMResult, Env, ExecutionResult,
-    InvalidTransaction, Log, Output, ResultAndState, Spec, SpecId::*, TransactTo, B256, U256,
-};
-use crate::{db::Database, journaled_state::JournaledState, precompile, Inspector};
-use alloc::boxed::Box;
-use alloc::vec::Vec;
-use core::fmt;
-use core::marker::PhantomData;
-use revm_interpreter::gas::initial_tx_gas;
-use revm_interpreter::{SharedMemory, MAX_CODE_SIZE};
-use revm_precompile::{Precompile, Precompiles};
-
 #[cfg(feature = "optimism")]
 use crate::optimism;
+use crate::{
+    db::Database,
+    handler::Handler,
+    interpreter::{
+        analysis::to_analysed, gas, return_ok, CallContext, CallInputs, CallScheme, Contract,
+        CreateInputs, Gas, Host, InstructionResult, Interpreter, SelfDestructResult, SuccessOrHalt,
+        Transfer,
+    },
+    journaled_state::{is_precompile, JournalCheckpoint, JournaledState},
+    precompile,
+    primitives::{
+        keccak256, Address, AnalysisKind, Bytecode, Bytes, EVMError, EVMResult, Env,
+        ExecutionResult, InvalidTransaction, Log, Output, ResultAndState, Spec, SpecId::*,
+        TransactTo, B256, U256,
+    },
+    Inspector,
+};
+use alloc::{boxed::Box, vec::Vec};
+use core::{fmt, marker::PhantomData};
+use fluentbase_runtime::Runtime;
+use fluentbase_rwasm::rwasm::Compiler;
+use revm_interpreter::{gas::initial_tx_gas, SharedMemory, MAX_CODE_SIZE};
+use revm_precompile::{Precompile, Precompiles};
 
 /// EVM call stack limit.
 pub const CALL_STACK_LIMIT: u64 = 1024;
 
 #[derive(Debug)]
-pub struct EVMData<'a, DB: Database> {
+pub struct RwasmData<'a, DB: Database> {
     pub env: &'a mut Env,
     pub journaled_state: JournaledState,
     pub db: &'a mut DB,
@@ -36,14 +39,14 @@ pub struct EVMData<'a, DB: Database> {
     pub l1_block_info: Option<optimism::L1BlockInfo>,
 }
 
-pub struct EVMImpl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> {
-    data: EVMData<'a, DB>,
+pub struct RwasmImpl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> {
+    data: RwasmData<'a, DB>,
     inspector: &'a mut dyn Inspector<DB>,
     handler: Handler<DB>,
     _phantomdata: PhantomData<GSPEC>,
 }
 
-impl<GSPEC, DB, const INSPECT: bool> fmt::Debug for EVMImpl<'_, GSPEC, DB, INSPECT>
+impl<GSPEC, DB, const INSPECT: bool> fmt::Debug for RwasmImpl<'_, GSPEC, DB, INSPECT>
 where
     GSPEC: Spec,
     DB: Database + fmt::Debug,
@@ -97,7 +100,7 @@ pub trait Transact<DBError> {
     }
 }
 
-impl<'a, DB: Database> EVMData<'a, DB> {
+impl<'a, DB: Database> RwasmData<'a, DB> {
     /// Load access list for berlin hardfork.
     ///
     /// Loading of accounts/storages is needed to make them warm.
@@ -113,7 +116,7 @@ impl<'a, DB: Database> EVMData<'a, DB> {
 }
 
 #[cfg(feature = "optimism")]
-impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, INSPECT> {
+impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB, INSPECT> {
     /// If the transaction is not a deposit transaction, subtract the L1 data fee from the
     /// caller's balance directly after minting the requested amount of ETH.
     fn remove_l1_cost(
@@ -170,7 +173,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, 
 }
 
 impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> Transact<DB::Error>
-    for EVMImpl<'a, GSPEC, DB, INSPECT>
+    for RwasmImpl<'a, GSPEC, DB, INSPECT>
 {
     fn preverify_transaction(&mut self) -> Result<(), EVMError<DB::Error>> {
         let env = self.env();
@@ -263,7 +266,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> Transact<DB::Error>
 
         #[cfg(feature = "optimism")]
         if self.data.env.cfg.optimism {
-            EVMImpl::<GSPEC, DB, INSPECT>::commit_mint_value(
+            RwasmImpl::<GSPEC, DB, INSPECT>::commit_mint_value(
                 tx_caller,
                 self.data.env.tx.optimism.mint,
                 self.data.db,
@@ -271,7 +274,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> Transact<DB::Error>
             )?;
 
             let is_deposit = self.data.env.tx.optimism.source_hash.is_some();
-            EVMImpl::<GSPEC, DB, INSPECT>::remove_l1_cost(
+            RwasmImpl::<GSPEC, DB, INSPECT>::remove_l1_cost(
                 is_deposit,
                 tx_caller,
                 tx_l1_cost,
@@ -285,7 +288,8 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> Transact<DB::Error>
             .map_err(EVMError::Database)?;
 
         // Subtract gas costs from the caller's account.
-        // We need to saturate the gas cost to prevent underflow in case that `disable_balance_check` is enabled.
+        // We need to saturate the gas cost to prevent underflow in case that
+        // `disable_balance_check` is enabled.
         let mut gas_cost =
             U256::from(tx_gas_limit).saturating_mul(self.data.env.effective_gas_price());
 
@@ -422,7 +426,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> Transact<DB::Error>
     }
 }
 
-impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, INSPECT> {
+impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB, INSPECT> {
     pub fn new(
         db: &'a mut DB,
         env: &'a mut Env,
@@ -431,7 +435,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, 
     ) -> Self {
         let journaled_state = JournaledState::new(precompiles.len(), GSPEC::SPEC_ID);
         Self {
-            data: EVMData {
+            data: RwasmData {
                 env,
                 journaled_state,
                 db,
@@ -530,7 +534,13 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, 
             }
         };
 
-        let bytecode = Bytecode::new_raw(inputs.init_code.clone());
+        // translate WASM binary to rWASM
+        let import_linker = Runtime::new_linker();
+        let mut compiler =
+            Compiler::new_with_linker(inputs.init_code.as_ref(), Some(&import_linker)).unwrap();
+        let rwasm_bytecode = compiler.finalize().unwrap();
+
+        let bytecode = Bytecode::new_raw(Bytes::from(rwasm_bytecode));
 
         let contract = Box::new(Contract::new(
             Bytes::new(),
@@ -612,9 +622,10 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, 
                     let gas_for_code = bytes.len() as u64 * gas::CODEDEPOSIT;
                     if !gas.record_cost(gas_for_code) {
                         // record code deposit gas cost and check if we are out of gas.
-                        // EIP-2 point 3: If contract creation does not have enough gas to pay for the
-                        // final gas fee for adding the contract code to the state, the contract
-                        //  creation fails (i.e. goes out-of-gas) rather than leaving an empty contract.
+                        // EIP-2 point 3: If contract creation does not have enough gas to pay for
+                        // the final gas fee for adding the contract code to
+                        // the state, the contract  creation fails (i.e.
+                        // goes out-of-gas) rather than leaving an empty contract.
                         if GSPEC::enabled(HOMESTEAD) {
                             self.data
                                 .journaled_state
@@ -668,33 +679,23 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, 
         &mut self,
         contract: Box<Contract>,
         gas_limit: u64,
-        is_static: bool,
-        shared_memory: &mut SharedMemory,
+        _is_static: bool,
+        _shared_memory: &mut SharedMemory,
     ) -> (InstructionResult, Bytes, Gas) {
-        let mut interpreter = Box::new(Interpreter::new(
-            contract,
-            gas_limit,
-            is_static,
-            shared_memory,
-        ));
-
-        interpreter.shared_memory.new_context_memory();
-
-        if INSPECT {
-            self.inspector
-                .initialize_interp(&mut interpreter, &mut self.data);
-        }
-        let exit_reason = if INSPECT {
-            interpreter.run_inspect::<Self, GSPEC>(self)
-        } else {
-            interpreter.run::<Self, GSPEC>(self)
-        };
-
-        let (return_value, gas) = (interpreter.return_value(), *interpreter.gas());
-
-        interpreter.shared_memory.free_context_memory();
-
-        (exit_reason, return_value, gas)
+        let import_linker = Runtime::new_linker();
+        let execution_result = Runtime::run_with_linker(
+            contract.bytecode.original_bytecode_slice(),
+            contract.input.as_ref(),
+            &import_linker,
+            true,
+        )
+        .unwrap();
+        let return_value = execution_result.data().output();
+        (
+            InstructionResult::Stop,
+            Bytes::from(return_value.clone()),
+            Gas::new(gas_limit),
+        )
     }
 
     /// Call precompile contract
@@ -855,7 +856,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> EVMImpl<'a, GSPEC, DB, 
 }
 
 impl<'a, GSPEC: Spec, DB: Database + 'a, const INSPECT: bool> Host
-    for EVMImpl<'a, GSPEC, DB, INSPECT>
+    for RwasmImpl<'a, GSPEC, DB, INSPECT>
 {
     fn step(&mut self, interp: &mut Interpreter<'_>) -> InstructionResult {
         self.inspector.step(interp, &mut self.data)
@@ -1045,9 +1046,10 @@ impl<'a, GSPEC: Spec, DB: Database + 'a, const INSPECT: bool> Host
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use crate::db::InMemoryDB;
-    use crate::primitives::{specification::BedrockSpec, state::AccountInfo, SpecId};
+    use crate::{
+        db::InMemoryDB,
+        primitives::{specification::BedrockSpec, state::AccountInfo, SpecId},
+    };
 
     #[test]
     fn test_commit_mint_value() {
@@ -1163,7 +1165,7 @@ mod tests {
             .initial_account_load(caller, &[U256::from(100)], &mut db)
             .unwrap();
         assert_eq!(
-            EVMImpl::<BedrockSpec, InMemoryDB, false>::remove_l1_cost(
+            RwasmImpl::<BedrockSpec, InMemoryDB, false>::remove_l1_cost(
                 false,
                 caller,
                 U256::from(101),

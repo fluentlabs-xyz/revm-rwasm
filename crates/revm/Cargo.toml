@@ -12,6 +12,11 @@ readme = "../../README.md"
 [dependencies]
 revm-interpreter = { path = "../interpreter", version = "1.3.0", default-features = false }
 revm-precompile = { path = "../precompile", version = "2.2.0", default-features = false }
+#revm-primitives = { path = "../primitives", default-features = false }
+
+# rwasm
+fluentbase-rwasm = { git = "https://github.com/fluentlabs-xyz/fluentbase", branch = "devel" }
+fluentbase-runtime = { git = "https://github.com/fluentlabs-xyz/fluentbase", branch = "devel" }
 
 #misc
 auto_impl = { version = "1.1", default-features = false }
@@ -28,6 +33,8 @@ tokio = { version = "1.33", features = [
 ethers-providers = { version = "2.0", optional = true }
 ethers-core = { version = "2.0", optional = true }
 futures = { version = "0.3.27", optional = true }
+wat = "1.0.76"
+hashbrown = "0.14.1"
 
 [dev-dependencies]
 ethers-contract = { version = "2.0.10", default-features = false }
@@ -36,11 +43,11 @@ criterion = "0.5"
 
 [features]
 default = ["std", "c-kzg", "secp256k1"]
-std = ["revm-interpreter/std", "revm-precompile/std"]
-serde = ["dep:serde", "dep:serde_json", "revm-interpreter/serde"]
-arbitrary = ["revm-interpreter/arbitrary"]
+std = ["revm-precompile/std"]
+serde = ["dep:serde", "dep:serde_json"]
+#arbitrary = ["revm-interpreter/arbitrary"]
 
-optimism = ["revm-interpreter/optimism", "revm-precompile/optimism"]
+#optimism = ["revm-interpreter/optimism", "revm-precompile/optimism"]
 
 ethersdb = ["std", "tokio", "futures", "ethers-providers", "ethers-core"]
 
@@ -52,13 +59,13 @@ dev = [
     "optional_gas_refund",
     "optional_no_base_fee",
 ]
-memory_limit = ["revm-interpreter/memory_limit"]
-no_gas_measuring = ["revm-interpreter/no_gas_measuring"]
-optional_balance_check = ["revm-interpreter/optional_balance_check"]
-optional_block_gas_limit = ["revm-interpreter/optional_block_gas_limit"]
-optional_eip3607 = ["revm-interpreter/optional_eip3607"]
-optional_gas_refund = ["revm-interpreter/optional_gas_refund"]
-optional_no_base_fee = ["revm-interpreter/optional_no_base_fee"]
+memory_limit = []
+no_gas_measuring = []
+optional_balance_check = []
+optional_block_gas_limit = []
+optional_eip3607 = []
+optional_gas_refund = []
+optional_no_base_fee = []
 
 # See comments in `revm-precompile`
 secp256k1 = ["revm-precompile/secp256k1"]
