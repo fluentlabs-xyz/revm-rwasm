@@ -4,23 +4,53 @@ use crate::{
     db::Database,
     handler::Handler,
     interpreter::{
-        analysis::to_analysed, gas, return_ok, CallContext, CallInputs, CallScheme, Contract,
-        CreateInputs, Gas, Host, InstructionResult, Interpreter, SelfDestructResult, SuccessOrHalt,
+        analysis::to_analysed,
+        gas,
+        return_ok,
+        CallContext,
+        CallInputs,
+        CallScheme,
+        Contract,
+        CreateInputs,
+        Gas,
+        Host,
+        InstructionResult,
+        Interpreter,
+        SelfDestructResult,
+        SuccessOrHalt,
         Transfer,
     },
     journaled_state::{is_precompile, JournalCheckpoint, JournaledState},
     precompile,
     primitives::{
-        keccak256, Address, AnalysisKind, Bytecode, Bytes, EVMError, EVMResult, Env,
-        ExecutionResult, InvalidTransaction, Log, Output, ResultAndState, Spec, SpecId::*,
-        TransactTo, B256, U256,
+        keccak256,
+        Address,
+        AnalysisKind,
+        Bytecode,
+        Bytes,
+        EVMError,
+        EVMResult,
+        Env,
+        ExecutionResult,
+        InvalidTransaction,
+        Log,
+        Output,
+        ResultAndState,
+        Spec,
+        SpecId::*,
+        TransactTo,
+        B256,
+        U256,
     },
     Inspector,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, marker::PhantomData};
-use fluentbase_runtime::Runtime;
-use fluentbase_rwasm::rwasm::Compiler;
+use fluentbase_runtime::{Runtime, RuntimeContext, SysFuncIdx};
+use fluentbase_rwasm::{
+    engine::bytecode::Instruction,
+    rwasm::{Compiler, FuncOrExport},
+};
 use revm_interpreter::{gas::initial_tx_gas, SharedMemory, MAX_CODE_SIZE};
 use revm_precompile::{Precompile, Precompiles};
 
@@ -538,9 +568,15 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
         let import_linker = Runtime::new_linker();
         let mut compiler =
             Compiler::new_with_linker(inputs.init_code.as_ref(), Some(&import_linker)).unwrap();
+        compiler
+            .translate(Some(FuncOrExport::StateRouter(
+                vec![FuncOrExport::Export("main"), FuncOrExport::Export("deploy")],
+                Instruction::Call((SysFuncIdx::SYS_STATE as u32).into()),
+            )))
+            .unwrap();
         let rwasm_bytecode = compiler.finalize().unwrap();
 
-        let bytecode = Bytecode::new_raw(Bytes::from(rwasm_bytecode));
+        let bytecode = Bytecode::new_raw(rwasm_bytecode.into());
 
         let contract = Box::new(Contract::new(
             Bytes::new(),
@@ -577,6 +613,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
             prepared_create.gas.limit(),
             false,
             shared_memory,
+            true,
         );
 
         // Host error if present on execution
@@ -679,13 +716,14 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
         &mut self,
         contract: Box<Contract>,
         gas_limit: u64,
-        _is_static: bool,
-        _shared_memory: &mut SharedMemory,
+        is_static: bool,
+        shared_memory: &mut SharedMemory,
+        is_new: bool,
     ) -> (InstructionResult, Bytes, Gas) {
         let import_linker = Runtime::new_linker();
-        let execution_result = Runtime::run_with_linker(
+        let execution_result = Runtime::run_with_context(
             contract.bytecode.original_bytecode_slice(),
-            contract.input.as_ref(),
+            RuntimeContext::new(contract.input.as_ref(), if is_new { 0 } else { 1 }),
             &import_linker,
             true,
         )
@@ -828,6 +866,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
                 prepared_call.gas.limit(),
                 inputs.is_static,
                 shared_memory,
+                false,
             );
             CallResult {
                 result: exit_reason,

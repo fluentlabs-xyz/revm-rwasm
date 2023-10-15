@@ -1,24 +1,24 @@
 use crate::{
     primitives::{
-        hex::FromHex, Account, AccountInfo, Address, Bytecode, HashMap, TxEnv, B256, KECCAK_EMPTY,
+        hex::FromHex,
+        Account,
+        AccountInfo,
+        Address,
+        Bytecode,
+        CreateScheme,
+        HashMap,
+        TxEnv,
+        B256,
         U256,
     },
-    Database, DatabaseCommit, EVM,
+    Database,
+    DatabaseCommit,
+    EVM,
 };
-use fluentbase_rwasm::rwasm::{Compiler, ImportLinker};
 use revm_interpreter::primitives::{Env, TransactTo};
 
-fn wat2rwasm(wat: &str) -> Vec<u8> {
-    let wasm_binary = wat::parse_str(wat).unwrap();
-    let mut compiler = Compiler::new(&wasm_binary).unwrap();
-    compiler.finalize().unwrap()
-}
-
-fn wasm2rwasm(wasm_binary: &[u8], import_linker: &ImportLinker) -> Vec<u8> {
-    Compiler::new_with_linker(&wasm_binary.to_vec(), Some(import_linker))
-        .unwrap()
-        .finalize()
-        .unwrap()
+fn wat2wasm(wat: &str) -> Vec<u8> {
+    wat::parse_str(wat).unwrap()
 }
 
 #[derive(Default)]
@@ -27,7 +27,7 @@ struct TestDb {
 }
 
 impl TestDb {
-    pub fn add_account(&mut self, address: Address, account_info: AccountInfo) {
+    fn add_account(&mut self, address: Address, account_info: AccountInfo) {
         self.accounts.insert(address, account_info);
     }
 }
@@ -42,7 +42,9 @@ impl Database for TestDb {
     type Error = ();
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        Ok(Some(self.accounts.get(&address).cloned().unwrap()))
+        Ok(Some(
+            self.accounts.get(&address).cloned().unwrap_or_default(),
+        ))
     }
 
     fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
@@ -65,7 +67,7 @@ impl Database for TestDb {
 
 #[test]
 fn test_simple() {
-    let rwasm_binary = wat2rwasm(
+    let wasm_binary = wat2wasm(
         r#"
 (module
   (func $main
@@ -76,6 +78,8 @@ fn test_simple() {
     call $add
     drop
     )
+  (func $deploy
+    )
   (func $add (param $lhs i32) (param $rhs i32) (result i32)
     local.get $lhs
     local.get $rhs
@@ -84,7 +88,8 @@ fn test_simple() {
   (global (;0;) i32 (i32.const 100))
   (global (;1;) i32 (i32.const 20))
   (global (;2;) i32 (i32.const 3))
-  (export "main" (func $main)))
+  (export "main" (func $main))
+  (export "deploy" (func $deploy)))
     "#,
     );
     let caller = Address::from_hex("0x390a4CEdBb65be7511D9E1a35b115376F39DbDF3").unwrap();
@@ -93,32 +98,23 @@ fn test_simple() {
         block: Default::default(),
         tx: TxEnv {
             gas_limit: 1_000_000,
-            transact_to: TransactTo::Call(Address::ZERO),
-            data: Default::default(),
+            transact_to: TransactTo::Create(CreateScheme::Create),
+            data: wasm_binary.clone().into(),
             caller,
             ..Default::default()
         },
     });
     let mut test_db = TestDb::default();
-    test_db.add_account(
-        caller,
-        AccountInfo {
-            balance: Default::default(),
-            nonce: 0,
-            code_hash: KECCAK_EMPTY,
-            code: None,
-        },
-    );
-    let bytecode = Bytecode::new_raw(rwasm_binary.into());
-    test_db.add_account(
-        Address::ZERO,
-        AccountInfo {
-            balance: Default::default(),
-            nonce: 0,
-            code_hash: bytecode.hash_slow(),
-            code: Some(bytecode),
-        },
-    );
+    test_db.add_account(caller, AccountInfo::default());
+    // let bytecode = Bytecode::new_raw(wasm_binary.into());
+    // test_db.add_account(
+    //     Address::ZERO,
+    //     AccountInfo {
+    //         code_hash: bytecode.hash_slow(),
+    //         code: Some(bytecode),
+    //         ..Default::default()
+    //     },
+    // );
     evm.database(test_db);
     let res = evm.transact().unwrap();
     println!("{:?}", res)
