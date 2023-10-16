@@ -354,7 +354,7 @@ version = "0.66.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2b84e06fc203107bfbad243f4aba2af864eb7db3b1cf46ea0a023b0b433d2a7"
 dependencies = [
- "bitflags 2.4.0",
+ "bitflags 2.4.1",
  "cexpr",
  "clang-sys",
  "lazy_static",
@@ -394,9 +394,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.4.0"
+version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4682ae6287fcf752ecaabbfcc7b6f9b72aa33933dc23a554d853aea8eea8635"
+checksum = "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07"
 dependencies = [
  "arbitrary",
  "serde",
@@ -1139,7 +1139,7 @@ dependencies = [
 [[package]]
 name = "fluentbase-runtime"
 version = "0.1.0"
-source = "git+https://github.com/fluentlabs-xyz/fluentbase?branch=devel#26e74e5c717fd48f5e9ec2e16eabcadbe9f76d08"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase?branch=devel#5b53d240abbcf772658d157d935d54632d28bced"
 dependencies = [
  "fluentbase-rwasm",
  "halo2curves 0.3.1",
@@ -1155,7 +1155,7 @@ dependencies = [
 [[package]]
 name = "fluentbase-rwasm"
 version = "0.30.0"
-source = "git+https://github.com/fluentlabs-xyz/fluentbase?branch=devel#26e74e5c717fd48f5e9ec2e16eabcadbe9f76d08"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase?branch=devel#5b53d240abbcf772658d157d935d54632d28bced"
 dependencies = [
  "byteorder",
  "downcast-rs",
@@ -2320,7 +2320,7 @@ checksum = "7c003ac8c77cb07bb74f5f198bce836a689bcd5a42574612bf14d17bfd08c20e"
 dependencies = [
  "bit-set",
  "bit-vec",
- "bitflags 2.4.0",
+ "bitflags 2.4.1",
  "lazy_static",
  "num-traits",
  "rand",
@@ -2434,9 +2434,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.10.1"
+version = "1.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaac441002f822bc9705a681810a4dd2963094b9ca0ddc41cb963a4c189189ea"
+checksum = "380b951a9c5e80ddfd6136919eef32310721aa4aacd4889a8d39124b026ab343"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -2446,9 +2446,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5011c7e263a695dc8ca064cddb722af1be54e517a280b12a5356f98366899e5d"
+checksum = "5f804c7828047e88b2d32e2d7fe5a105da8ee3264f01902f796c8e067dc2483f"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -2559,7 +2559,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-rlp",
  "auto_impl",
- "bitflags 2.4.0",
+ "bitflags 2.4.1",
  "bitvec",
  "c-kzg",
  "enumn",
@@ -2716,7 +2716,7 @@ version = "0.38.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "745ecfa778e66b2b63c88a61cb36e0eea109e803b0b86bf9879fbc77c70e86ed"
 dependencies = [
- "bitflags 2.4.0",
+ "bitflags 2.4.1",
  "errno",
  "libc",
  "linux-raw-sys",
@@ -3112,9 +3112,9 @@ dependencies = [
 
 [[package]]
 name = "strum_macros"
-version = "0.25.2"
+version = "0.25.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad8d03b598d3d0fff69bf533ee3ef19b8eeb342729596df84bcc7e1f96ec4059"
+checksum = "23dc1fa9ac9c169a78ba62f0b841814b7abae11bdd047b9c58f893439e309ea0"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",

@@ -46,8 +46,9 @@ use crate::{
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, marker::PhantomData};
-use fluentbase_runtime::{Runtime, RuntimeContext, SysFuncIdx};
+use fluentbase_runtime::{Error, Runtime, RuntimeContext, SysFuncIdx};
 use fluentbase_rwasm::{
+    common::Trap,
     engine::bytecode::Instruction,
     rwasm::{Compiler, FuncOrExport},
 };
@@ -568,12 +569,19 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
         let import_linker = Runtime::new_linker();
         let mut compiler =
             Compiler::new_with_linker(inputs.init_code.as_ref(), Some(&import_linker)).unwrap();
-        compiler
-            .translate(Some(FuncOrExport::StateRouter(
-                vec![FuncOrExport::Export("main"), FuncOrExport::Export("deploy")],
-                Instruction::Call((SysFuncIdx::SYS_STATE as u32).into()),
-            )))
-            .unwrap();
+        let res = compiler.translate(Some(FuncOrExport::StateRouter(
+            vec![FuncOrExport::Export("main"), FuncOrExport::Export("deploy")],
+            Instruction::Call((SysFuncIdx::SYS_STATE as u32).into()),
+        )));
+        if let Err(err) = res {
+            println!("compilation error: {:?}", err);
+            return Err(CreateResult {
+                result: InstructionResult::Revert,
+                created_address: None,
+                gas,
+                return_value: Bytes::new(),
+            });
+        }
         let rwasm_bytecode = compiler.finalize().unwrap();
 
         let bytecode = Bytecode::new_raw(rwasm_bytecode.into());
@@ -721,19 +729,47 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
         is_new: bool,
     ) -> (InstructionResult, Bytes, Gas) {
         let import_linker = Runtime::new_linker();
-        let execution_result = Runtime::run_with_context(
+        let res = Runtime::run_with_context(
             contract.bytecode.original_bytecode_slice(),
             RuntimeContext::new(contract.input.as_ref(), if is_new { 0 } else { 1 }),
             &import_linker,
             true,
-        )
-        .unwrap();
-        let return_value = execution_result.data().output();
-        (
-            InstructionResult::Stop,
-            Bytes::from(return_value.clone()),
-            Gas::new(gas_limit),
-        )
+        );
+        match res {
+            Ok(execution_result) => {
+                let return_value = execution_result.data().output();
+                (
+                    InstructionResult::Stop,
+                    Bytes::from(return_value.clone()),
+                    Gas::new(gas_limit),
+                )
+            }
+            Err(err) => {
+                let error_code = match err {
+                    Error::Rwasm(err) => match err {
+                        fluentbase_rwasm::Error::Trap(trap) => {
+                            if let Some(exit_status) = trap.i32_exit_status() {
+                                Some(exit_status)
+                            } else if let Some(trap_code) = trap.trap_code() {
+                                Some(trap_code as i32)
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    },
+                    Error::ReducedModule(_) => None,
+                };
+                let error_code = error_code
+                    .map(|code| code.to_le_bytes())
+                    .unwrap_or_default();
+                (
+                    InstructionResult::Revert,
+                    error_code.into(),
+                    Gas::new(gas_limit),
+                )
+            }
+        }
     }
 
     /// Call precompile contract

@@ -15,6 +15,11 @@ use crate::{
     DatabaseCommit,
     EVM,
 };
+use fluentbase_runtime::{Runtime, SysFuncIdx};
+use fluentbase_rwasm::{
+    engine::bytecode::Instruction,
+    rwasm::{Compiler, CompilerError, FuncOrExport},
+};
 use revm_interpreter::primitives::{Env, TransactTo};
 
 fn wat2wasm(wat: &str) -> Vec<u8> {
