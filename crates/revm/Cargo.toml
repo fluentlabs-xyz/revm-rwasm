@@ -15,8 +15,10 @@ revm-precompile = { path = "../precompile", version = "2.2.0", default-features 
 #revm-primitives = { path = "../primitives", default-features = false }
 
 # rwasm
-fluentbase-rwasm = { git = "https://github.com/fluentlabs-xyz/fluentbase", branch = "devel" }
-fluentbase-runtime = { git = "https://github.com/fluentlabs-xyz/fluentbase", branch = "devel" }
+#fluentbase-rwasm = { git = "https://github.com/fluentlabs-xyz/fluentbase", branch = "devel" }
+#fluentbase-runtime = { git = "https://github.com/fluentlabs-xyz/fluentbase", branch = "devel" }
+fluentbase-rwasm = { path = "../../../fluentbase/rwasm" }
+fluentbase-runtime = { path = "../../../fluentbase/runtime" }
 
 #misc
 auto_impl = { version = "1.1", default-features = false }

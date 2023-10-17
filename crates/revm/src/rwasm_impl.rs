@@ -46,7 +46,7 @@ use crate::{
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, marker::PhantomData};
-use fluentbase_runtime::{Error, Runtime, RuntimeContext, SysFuncIdx};
+use fluentbase_runtime::{Runtime, RuntimeContext, RuntimeError, SysFuncIdx};
 use fluentbase_rwasm::{
     common::Trap,
     engine::bytecode::Instruction,
@@ -730,10 +730,11 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
     ) -> (InstructionResult, Bytes, Gas) {
         let import_linker = Runtime::new_linker();
         let res = Runtime::run_with_context(
-            contract.bytecode.original_bytecode_slice(),
-            RuntimeContext::new(contract.input.as_ref(), if is_new { 0 } else { 1 }),
+            RuntimeContext::new(contract.bytecode.original_bytecode_slice())
+                .with_input(contract.input.as_ref())
+                .with_catch_trap(true)
+                .with_state(if is_new { 0 } else { 1 }),
             &import_linker,
-            true,
         );
         match res {
             Ok(execution_result) => {
@@ -746,7 +747,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
             }
             Err(err) => {
                 let error_code = match err {
-                    Error::Rwasm(err) => match err {
+                    RuntimeError::Rwasm(err) => match err {
                         fluentbase_rwasm::Error::Trap(trap) => {
                             if let Some(exit_status) = trap.i32_exit_status() {
                                 Some(exit_status)
@@ -758,7 +759,7 @@ impl<'a, GSPEC: Spec, DB: Database, const INSPECT: bool> RwasmImpl<'a, GSPEC, DB
                         }
                         _ => None,
                     },
-                    Error::ReducedModule(_) => None,
+                    RuntimeError::ReducedModule(_) => None,
                 };
                 let error_code = error_code
                     .map(|code| code.to_le_bytes())
