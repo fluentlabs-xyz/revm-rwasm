@@ -124,7 +124,7 @@ checksum = "c0391754c09fab4eae3404d19d0d297aa1c670c1775ab51d8a5312afeca23157"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -140,7 +140,7 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
  "syn-solidity",
  "tiny-keccak",
 ]
@@ -342,7 +342,7 @@ checksum = "a66537f1bb974b254c98ed142ff995236e81b9d0fe4db0575f46612cb15eb0f9"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -468,7 +468,7 @@ dependencies = [
  "regex",
  "rustc-hash",
  "shlex",
- "syn 2.0.39",
+ "syn 2.0.40",
  "which",
 ]
 
@@ -1094,7 +1094,7 @@ checksum = "67e77553c4162a157adbf834ebae5b415acbecbeafc7a74b0e886657506a7611"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -1280,7 +1280,7 @@ checksum = "c2ad8cef1d801a4686bfd8919f0b30eac4c8e48968c437a6405ded4fb5272d2b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -1494,7 +1494,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "syn 2.0.39",
+ "syn 2.0.40",
  "toml",
  "walkdir",
 ]
@@ -1512,7 +1512,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "serde_json",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -1538,7 +1538,7 @@ dependencies = [
  "serde",
  "serde_json",
  "strum",
- "syn 2.0.39",
+ "syn 2.0.40",
  "tempfile",
  "thiserror",
  "tiny-keccak",
@@ -1769,7 +1769,18 @@ dependencies = [
 [[package]]
 name = "fluentbase-poseidon"
 version = "0.1.0"
-source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#5bbdaac75de9dce5ce010a1c514b167ea308e454"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#125d0fc643693ee6c80266e198a5049788523763"
+dependencies = [
+ "bitvec 1.0.1",
+ "halo2curves 0.3.1",
+ "lazy_static",
+ "poseidon 0.2.0 (git+https://github.com/scroll-tech/poseidon?rev=0b9965fbcd9e03559088b8f68489592286bc55e0)",
+]
+
+[[package]]
+name = "fluentbase-poseidon"
+version = "0.1.0"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main#125d0fc643693ee6c80266e198a5049788523763"
 dependencies = [
  "bitvec 1.0.1",
  "halo2curves 0.3.1",
@@ -1780,7 +1791,7 @@ dependencies = [
 [[package]]
 name = "fluentbase-runtime"
 version = "0.1.0"
-source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#5bbdaac75de9dce5ce010a1c514b167ea308e454"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#125d0fc643693ee6c80266e198a5049788523763"
 dependencies = [
  "bincode",
  "bitvec 1.0.1",
@@ -1790,8 +1801,45 @@ dependencies = [
  "ethereum-types 0.14.1",
  "ethers",
  "ethers-core",
- "fluentbase-poseidon",
- "fluentbase-rwasm",
+ "fluentbase-poseidon 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel)",
+ "fluentbase-rwasm 0.30.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel)",
+ "halo2curves 0.3.1",
+ "hex",
+ "hex-literal",
+ "k256",
+ "keccak-hash",
+ "lazy_static",
+ "parity-scale-codec 3.6.9",
+ "poseidon 0.2.0 (git+https://github.com/scroll-tech/poseidon)",
+ "rlp",
+ "serde",
+ "serde_json",
+ "sha2",
+ "strum",
+ "strum_macros",
+ "thiserror",
+ "tiny-keccak",
+ "tokio",
+ "wasi",
+ "wat",
+ "web3",
+]
+
+[[package]]
+name = "fluentbase-runtime"
+version = "0.1.0"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main#125d0fc643693ee6c80266e198a5049788523763"
+dependencies = [
+ "bincode",
+ "bitvec 1.0.1",
+ "bytes",
+ "eth_trie",
+ "ethereum",
+ "ethereum-types 0.14.1",
+ "ethers",
+ "ethers-core",
+ "fluentbase-poseidon 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
+ "fluentbase-rwasm 0.30.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
  "halo2curves 0.3.1",
  "hex",
  "hex-literal",
@@ -1817,7 +1865,24 @@ dependencies = [
 [[package]]
 name = "fluentbase-rwasm"
 version = "0.30.0"
-source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#5bbdaac75de9dce5ce010a1c514b167ea308e454"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#125d0fc643693ee6c80266e198a5049788523763"
+dependencies = [
+ "byteorder",
+ "downcast-rs",
+ "libm",
+ "num-traits",
+ "paste",
+ "smallvec",
+ "spin 0.9.8",
+ "strum",
+ "strum_macros",
+ "wasmparser-nostd",
+]
+
+[[package]]
+name = "fluentbase-rwasm"
+version = "0.30.0"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main#125d0fc643693ee6c80266e198a5049788523763"
 dependencies = [
  "byteorder",
  "downcast-rs",
@@ -1834,15 +1899,34 @@ dependencies = [
 [[package]]
 name = "fluentbase-sdk"
 version = "0.1.0"
-source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#5bbdaac75de9dce5ce010a1c514b167ea308e454"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel#125d0fc643693ee6c80266e198a5049788523763"
 dependencies = [
  "alloy-primitives 0.5.2",
  "alloy-sol-types",
  "byteorder",
  "eth_trie",
- "fluentbase-poseidon",
- "fluentbase-runtime",
- "fluentbase-rwasm",
+ "fluentbase-poseidon 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel)",
+ "fluentbase-runtime 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel)",
+ "fluentbase-rwasm 0.30.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel)",
+ "halo2curves 0.3.1",
+ "k256",
+ "keccak-hash",
+ "lazy_static",
+ "wee_alloc",
+]
+
+[[package]]
+name = "fluentbase-sdk"
+version = "0.1.0"
+source = "git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main#125d0fc643693ee6c80266e198a5049788523763"
+dependencies = [
+ "alloy-primitives 0.5.2",
+ "alloy-sol-types",
+ "byteorder",
+ "eth_trie",
+ "fluentbase-poseidon 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
+ "fluentbase-runtime 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
+ "fluentbase-rwasm 0.30.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
  "halo2curves 0.3.1",
  "k256",
  "keccak-hash",
@@ -1968,7 +2052,7 @@ checksum = "53b153fd91e4b0147f4aced87be237c98248656bb01050b96bf3ee89220a8ddb"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -2677,9 +2761,9 @@ checksum = "884e2677b40cc8c339eaefcb701c32ef1fd2493d71118dc0ca4b6a736c93bd67"
 
 [[package]]
 name = "libc"
-version = "0.2.150"
+version = "0.2.151"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89d92a4743f9a61002fae18374ed11e7973f530cb3a3255fb354818118b2203c"
+checksum = "302d7ab3130588088d277783b1e2d2e10c9e9e4a16dd9050e6ec93fb3e7048f4"
 
 [[package]]
 name = "libloading"
@@ -2938,7 +3022,7 @@ dependencies = [
  "proc-macro-crate 2.0.1",
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -3022,7 +3106,7 @@ checksum = "a948666b637a0f465e8564c73e89d4dde00d72d4d473cc972f390fc3dcee7d9c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -3281,7 +3365,7 @@ dependencies = [
  "phf_shared 0.11.2",
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -3319,7 +3403,7 @@ checksum = "4359fd9c9171ec6e8c62926d6faaf553a8dc3f64e1507e76da7911b4f6a04405"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -3437,7 +3521,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae005bd773ab59b4725093fd7df83fd7892f7d8eafb48dbd7de6e024e4215f9d"
 dependencies = [
  "proc-macro2",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -3745,9 +3829,9 @@ dependencies = [
  "ethers-contract",
  "ethers-core",
  "ethers-providers",
- "fluentbase-runtime",
- "fluentbase-rwasm",
- "fluentbase-sdk",
+ "fluentbase-runtime 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
+ "fluentbase-rwasm 0.30.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
+ "fluentbase-sdk 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=main)",
  "futures",
  "hex-literal",
  "revm-interpreter",
@@ -3762,7 +3846,7 @@ dependencies = [
 name = "revm-compiler"
 version = "3.5.0"
 dependencies = [
- "fluentbase-sdk",
+ "fluentbase-sdk 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel)",
  "revm-interpreter",
  "revm-precompile",
  "serde_json",
@@ -3772,7 +3856,7 @@ dependencies = [
 name = "revm-interpreter"
 version = "1.3.0"
 dependencies = [
- "fluentbase-sdk",
+ "fluentbase-sdk 0.1.0 (git+https://github.com/fluentlabs-xyz/fluentbase.git?branch=devel)",
  "revm-primitives",
  "serde",
 ]
@@ -3978,9 +4062,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.27"
+version = "0.38.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfeae074e687625746172d639330f1de242a178bf3189b51e35a7a21573513ac"
+checksum = "72e572a5e8ca657d7366229cdde4bd14c4eb5499a9573d4d366fe1b599daa316"
 dependencies = [
  "bitflags 2.4.1",
  "errno",
@@ -4040,9 +4124,9 @@ dependencies = [
 
 [[package]]
 name = "ryu"
-version = "1.0.15"
+version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
+checksum = "f98d2aa92eebf49b69786be48e4477826b256916e84a57ff2a4f21923b48eb4c"
 
 [[package]]
 name = "salsa20"
@@ -4253,7 +4337,7 @@ checksum = "43576ca501357b9b071ac53cdc7da8ef0cbd9493d8df094cd821777ea6e894d3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -4540,7 +4624,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustversion",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -4595,9 +4679,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.39"
+version = "2.0.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23e78b90f2fcf45d3e842032ce32e3f2d1545ba6636271dcbf24fa306d87be7a"
+checksum = "13fa70a4ee923979ffb522cacce59d34421ebdea5625e1073c4326ef9d2dd42e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4613,7 +4697,7 @@ dependencies = [
  "paste",
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -4693,7 +4777,7 @@ checksum = "266b2e40bc00e5a6c09c3584011e08b06f123c00362c92b975ba9843aaaa14b8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -4795,7 +4879,7 @@ checksum = "5b8a1e28f2deaa14e508979454cb3a223b10b938b45af148bc0986de36f1923b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -4929,7 +5013,7 @@ checksum = "34704c8d6ebcbc939824180af020566b01a7c01f80641264eba0999f6c2b6be7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -5174,7 +5258,7 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
  "wasm-bindgen-shared",
 ]
 
@@ -5208,7 +5292,7 @@ checksum = "f0eb82fcb7930ae6219a7ecfd55b217f5f0893484b7a13022ebb2b2bf20b5283"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -5651,7 +5735,7 @@ checksum = "be912bf68235a88fbefd1b73415cb218405958d1655b2ece9035a19920bdf6ba"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
@@ -5671,7 +5755,7 @@ checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.39",
+ "syn 2.0.40",
 ]
 
 [[package]]
