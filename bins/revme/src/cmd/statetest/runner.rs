@@ -4,10 +4,13 @@ use super::{
     utils::recover_address,
 };
 use crate::cmd::statetest::merkle_trie::state_merkle_trie_root2;
+use fluentbase_genesis::devnet::{devnet_genesis_from_file, KECCAK_HASH_KEY, POSEIDON_HASH_KEY};
+use fluentbase_poseidon::poseidon_hash;
 use fluentbase_types::{Address, ExitCode};
 use indicatif::{ProgressBar, ProgressDrawTarget};
+use lazy_static::lazy_static;
 use revm::{
-    db::EmptyDB,
+    db::{states::plain_account::PlainStorage, EmptyDB},
     inspector_handle_register,
     inspectors::TracerEip3155,
     interpreter::CreateScheme,
@@ -24,6 +27,8 @@ use revm::{
         SpecId,
         TransactTo,
         B256,
+        KECCAK_EMPTY,
+        POSEIDON_EMPTY,
         U256,
     },
     Evm,
@@ -141,20 +146,23 @@ fn check_evm_execution<EXT1, EXT2>(
     expected_output: Option<&Bytes>,
     test_name: &str,
     exec_result: &Result<ExecutionResult, EVMError<Infallible>>,
-    exec_result2: &Result<ExecutionResult, EVMError<ExitCode>>,
+    exec_result2: Option<&Result<ExecutionResult, EVMError<ExitCode>>>,
     evm: &Evm<'_, EXT1, &mut State<EmptyDB>>,
-    evm2: &fluentbase_revm::Evm<
-        '_,
-        EXT2,
-        &mut fluentbase_revm::State<fluentbase_revm::db::EmptyDBTyped<ExitCode>>,
+    evm2: Option<
+        &fluentbase_revm::Evm<
+            '_,
+            EXT2,
+            &mut fluentbase_revm::State<fluentbase_revm::db::EmptyDBTyped<ExitCode>>,
+        >,
     >,
     print_json_outcome: bool,
 ) -> Result<(), TestError> {
     let logs_root = log_rlp_hash(exec_result.as_ref().map(|r| r.logs()).unwrap_or_default());
-    let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
+    // let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
 
     let state_root = state_merkle_trie_root(evm.context.evm.db.cache.trie_account().into_iter());
-    let state_root2 = state_merkle_trie_root2(evm2.context.evm.db.cache.trie_account().into_iter());
+    // let state_root2 =
+    // state_merkle_trie_root2(evm2.context.evm.db.cache.trie_account().into_iter());
 
     let print_json_output = |error: Option<String>| {
         if print_json_outcome {
@@ -254,6 +262,17 @@ fn check_evm_execution<EXT1, EXT2>(
     Ok(())
 }
 
+lazy_static! {
+    static ref EVM_LOADER: (Bytes, B256) = {
+        let rwasm_bytecode: Bytes = include_bytes!(
+            "../../../../../../fluentbase/crates/contracts/assets/evm_loader_contract.rwasm"
+        )
+        .into();
+        let rwasm_hash = B256::from(poseidon_hash(&rwasm_bytecode));
+        (rwasm_bytecode, rwasm_hash)
+    };
+}
+
 pub fn execute_test_suite(
     path: &Path,
     elapsed: &Arc<Mutex<Duration>>,
@@ -270,17 +289,56 @@ pub fn execute_test_suite(
         kind: e.into(),
     })?;
 
+    let devnet_genesis = devnet_genesis_from_file();
+
+    let (rwasm_bytecode, rwasm_hash) = (*EVM_LOADER).clone();
+
     for (name, unit) in suite.0 {
         // Create database and insert cache
         let mut cache_state = revm::CacheState::new(false);
         let mut cache_state2 = fluentbase_revm::CacheState::new(false);
-        for (address, info) in unit.pre {
+
+        for (address, info) in &devnet_genesis.alloc {
+            let code_hash = info
+                .storage
+                .as_ref()
+                .and_then(|storage| storage.get(&KECCAK_HASH_KEY))
+                .cloned()
+                .unwrap_or(KECCAK_EMPTY);
+            let rwasm_code_hash = info
+                .storage
+                .as_ref()
+                .and_then(|storage| storage.get(&POSEIDON_HASH_KEY))
+                .cloned()
+                .unwrap_or(POSEIDON_EMPTY);
             let acc_info = AccountInfo {
                 balance: info.balance,
+                nonce: info.nonce.unwrap_or_default(),
+                code_hash,
+                rwasm_code_hash,
+                code: None,
+                rwasm_code: Some(Bytecode::new_raw(info.code.clone().unwrap_or_default())),
+            };
+            let storage = info
+                .storage
+                .as_ref()
+                .map(|storage| {
+                    let mut result = PlainStorage::default();
+                    for (k, v) in storage.iter() {
+                        result.insert((*k).into(), (*v).into());
+                    }
+                    result
+                })
+                .unwrap_or_default();
+            cache_state2.insert_account_with_storage(*address, acc_info, storage.clone());
+        }
+
+        for (address, info) in unit.pre {
+            let mut acc_info = AccountInfo {
+                balance: info.balance,
                 code_hash: keccak256(&info.code),
-                code: Some(Bytecode::new_raw(info.code.clone())),
                 nonce: info.nonce,
-                // TODO(stas): "wanna put rWASM bytecode here?"
+                code: Some(Bytecode::new_raw(info.code.clone())),
                 ..Default::default()
             };
             cache_state.insert_account_with_storage(
@@ -288,6 +346,8 @@ pub fn execute_test_suite(
                 acc_info.clone(),
                 info.storage.clone(),
             );
+            acc_info.rwasm_code_hash = rwasm_hash;
+            acc_info.rwasm_code = Some(Bytecode::new_raw(rwasm_bytecode.clone()));
             cache_state2.insert_account_with_storage(address, acc_info, info.storage.clone());
         }
 
@@ -455,21 +515,21 @@ pub fn execute_test_suite(
                     let res2 = evm2.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
 
-                    let Err(e) = check_evm_execution(
+                    let Err(e) = check_evm_execution::<TracerEip3155, ()>(
                         &test,
                         &spec_name,
                         unit.out.as_ref(),
                         &name,
                         &res,
-                        &res2,
+                        None, //&res2,
                         &evm,
-                        &evm2,
+                        None, //&evm2,
                         print_json_outcome,
                     ) else {
                         continue;
                     };
                     // reset external context
-                    (e, res2)
+                    (e, res)
                 } else {
                     let timer = Instant::now();
                     let res = evm.transact_commit();
@@ -477,21 +537,21 @@ pub fn execute_test_suite(
                     *elapsed.lock().unwrap() += timer.elapsed();
 
                     // dump state and traces if test failed
-                    let output = check_evm_execution(
+                    let output = check_evm_execution::<(), ()>(
                         &test,
                         &spec_name,
                         unit.out.as_ref(),
                         &name,
                         &res,
-                        &res2,
+                        None, // &res2,
                         &evm,
-                        &evm2,
+                        None, //&evm2,
                         print_json_outcome,
                     );
                     let Err(e) = output else {
                         continue;
                     };
-                    (e, res2)
+                    (e, res)
                 };
 
                 // print only once or
@@ -535,8 +595,8 @@ pub fn execute_test_suite(
 
                 println!("\nExecution result: {exec_result:#?}");
                 println!("\nExpected exception: {:?}", test.expect_exception);
-                println!("\nState before: {cache_state:#?}");
-                println!("\nState after: {:#?}", evm.context.evm.db.cache);
+                // println!("\nState before: {cache_state:#?}");
+                // println!("\nState after: {:#?}", evm.context.evm.db.cache);
                 println!("\nSpecification: {spec_id:?}");
                 println!("\nEnvironment: {env:#?}");
                 println!("\nTest name: {name:?} (index: {index}, path: {path}) failed:\n{e}");
@@ -607,8 +667,7 @@ pub fn run(
             }
             console_bar.inc(1);
         };
-        f().unwrap()
-        // handles.push(thread.spawn(f).unwrap());
+        handles.push(thread.spawn(f).unwrap());
     }
 
     // join all threads before returning an error

@@ -47,7 +47,9 @@ revm = { package = "revm", path = "../../crates/revm", default-features = false,
 #    "c-kzg",
 #] }
 #revm-oiginal-primitives = { package = "revm-primitives", git = "https://github.com/bluealloy/revm.git", version = "8.0.0", default-features = false }
-fluentbase-types = { path = "../../../fluentbase/crates/types", default-features = false }
+fluentbase-types = { path = "../../../fluentbase/crates/types" }
+fluentbase-poseidon = { path = "../../../fluentbase/crates/poseidon" }
+fluentbase-genesis = { path = "../../../fluentbase/crates/genesis" }
 #revm = { path = "../../crates/revm", version = "7.2.0", default-features = false, features = [
 #    "ethersdb",
 #    "std",
@@ -65,3 +67,4 @@ thiserror = "1.0"
 triehash = "0.8"
 walkdir = "2.5"
 k256 = { version = "0.13.3", features = ["ecdsa"] }
+lazy_static = "1.4.0"
