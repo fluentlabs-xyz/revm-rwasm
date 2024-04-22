@@ -41,11 +41,9 @@ use fluentbase_types::{Address, ExitCode};
 use revm::primitives::EVMError;
 use thiserror::Error;
 use walkdir::{DirEntry, WalkDir};
-use revm as ro;
+use revm_original as ro;
 use ro::primitives as rop;
 use revm::primitives::EVMResultGeneric;
-use crate::cmd::statetest::helpers::{convert_address, convert_b256, convert_bytes, convert_hashmap};
-use crate::cmd::statetest::merkle_trie::state_merkle_trie_root_original;
 
 #[derive(Debug, Error)]
 #[error("Test {name} failed: {kind}")]
@@ -150,8 +148,11 @@ fn check_evm_execution<EXT1, EXT2>(
 ) -> Result<(), TestError> {
     // let logs_root = log_rlp_hash(exec_result.as_ref().map(|r| r.logs()).unwrap_or_default());
     let logs_root_original = log_rlp_hash(exec_result_original.as_ref().map(|r| unsafe { transmute(r.logs()) }).unwrap_or_default());
-    let state_root = state_merkle_trie_root_original(evm.context.evm.db.cache.trie_account());
-    let state_root_original = state_merkle_trie_root_original(evm_original.context.evm.db.cache.trie_account());
+    let state_root = state_merkle_trie_root(evm.context.evm.db.cache.trie_account());
+    let accounts = evm_original.context.evm.db.cache.trie_account().into_iter().map(|(addr, acc)| {
+        (addr, &revm::db::PlainAccount { info: unsafe { transmute(acc.info.clone()) }, storage: acc.storage.clone() })
+    });
+    let state_root_original = state_merkle_trie_root(accounts);
 
     let print_json_output = |error: Option<String>| {
         if print_json_outcome {
@@ -283,13 +284,13 @@ pub fn execute_test_suite(
             };
             let acc_info_original = ro::primitives::AccountInfo {
                 balance: info.balance,
-                code_hash: convert_b256(&keccak256(&info.code)),
-                code: Some(ro::primitives::Bytecode::new_raw(convert_bytes(&info.code))),
+                code_hash: (keccak256(&info.code)),
+                code: Some(ro::primitives::Bytecode::new_raw((info.code))),
                 nonce: info.nonce,
                 ..Default::default()
             };
             cache_state.insert_account_with_storage(address, acc_info, info.storage.clone());
-            cache_state_original.insert_account_with_storage(convert_address(&address), acc_info_original, convert_hashmap(&info.storage));
+            cache_state_original.insert_account_with_storage((address), acc_info_original, (info.storage));
         }
 
         let mut env = Box::<Env>::default();
@@ -304,7 +305,7 @@ pub fn execute_test_suite(
         env_original.block.number = unit.env.current_number;
 
         env.block.coinbase = unit.env.current_coinbase;
-        env_original.block.coinbase = convert_address(&unit.env.current_coinbase);
+        env_original.block.coinbase = (unit.env.current_coinbase);
 
         env.block.timestamp = unit.env.current_timestamp;
         env_original.block.timestamp = unit.env.current_timestamp;
@@ -321,7 +322,7 @@ pub fn execute_test_suite(
         // after the Merge prevrandao replaces mix_hash field in block and replaced difficulty
         // opcode in EVM.
         env.block.prevrandao = unit.env.current_random;
-        env_original.block.prevrandao = unit.env.current_random.map(|v| convert_b256(&v));
+        env_original.block.prevrandao = unit.env.current_random;
         // EIP-4844
         if let Some(current_excess_blob_gas) = unit.env.current_excess_blob_gas {
             env.block.set_blob_excess_gas_and_price(current_excess_blob_gas.to());
@@ -353,7 +354,7 @@ pub fn execute_test_suite(
             })?
         };
         env.tx.caller = caller;
-        env_original.tx.caller = convert_address(&caller);
+        env_original.tx.caller = (caller);
 
         let gas_price = unit
             .transaction
@@ -370,7 +371,7 @@ pub fn execute_test_suite(
         // EIP-4844
         let blob_hashes = unit.transaction.blob_versioned_hashes;
         env.tx.blob_hashes = blob_hashes.clone();
-        env_original.tx.blob_hashes = blob_hashes.iter().map(|v| convert_b256(&v)).collect();
+        env_original.tx.blob_hashes = blob_hashes;
 
         let max_fee_per_blob_gas = unit.transaction.max_fee_per_blob_gas;
         env.tx.max_fee_per_blob_gas = max_fee_per_blob_gas;
@@ -403,7 +404,7 @@ pub fn execute_test_suite(
                     .unwrap()
                     .clone();
                 env.tx.data = data.clone();
-                env_original.tx.data = convert_bytes(&data);
+                env_original.tx.data = (data);
 
                 let value = unit.transaction.value[test.indexes.value];
                 env.tx.value = value;

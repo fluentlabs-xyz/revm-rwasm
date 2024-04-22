@@ -6,8 +6,7 @@ use revm::{
     primitives::{keccak256, Address, Log, B256, U256},
 };
 use triehash::sec_trie_root;
-use revm_oiginal as ro;
-use ro::primitives as rop;
+use revm_original as ro;
 
 pub fn log_rlp_hash(logs: &[Log]) -> B256 {
     let mut out = Vec::with_capacity(alloy_rlp::list_length(logs));
@@ -26,17 +25,17 @@ pub fn state_merkle_trie_root<'a>(
     }))
 }
 
-pub fn state_merkle_trie_root_original<'a>(
-    accounts: impl IntoIterator<Item=(ro::precompile::Address, &'a ro::db::PlainAccount)>,
-) -> ro::precompile::B256 {
-    let res = trie_root(accounts.into_iter().map(|(address, acc)| {
-        (
-            address,
-            alloy_rlp::encode_fixed_size(&TrieAccountOriginal::new(acc)),
-        )
-    }));
-    ro::precompile::B256::from_slice(res.as_slice())
-}
+// pub fn state_merkle_trie_root_original<'a>(
+//     accounts: impl IntoIterator<Item=(ro::precompile::Address, &'a ro::db::PlainAccount)>,
+// ) -> ro::precompile::B256 {
+//     let res = trie_root(accounts.into_iter().map(|(address, acc)| {
+//         (
+//             address,
+//             alloy_rlp::encode_fixed_size(&TrieAccountOriginal::new(acc)),
+//         )
+//     }));
+//     ro::precompile::B256::from_slice(res.as_slice())
+// }
 
 #[derive(RlpEncodable, RlpMaxEncodedLen)]
 struct TrieAccount {
@@ -66,22 +65,6 @@ impl TrieAccount {
                     .map(|(k, v)| (k.to_be_bytes::<32>(), alloy_rlp::encode_fixed_size(v))),
             ),
             code_hash: acc.info.code_hash,
-        }
-    }
-}
-
-impl TrieAccountOriginal {
-    fn new(acc: &ro::db::states::PlainAccount) -> Self {
-        Self {
-            nonce: acc.info.nonce,
-            balance: acc.info.balance,
-            root_hash: sec_trie_root::<KeccakHasher, _, _, _>(
-                acc.storage
-                    .iter()
-                    .filter(|(_k, &v)| v != U256::ZERO)
-                    .map(|(k, v)| (k.to_be_bytes::<32>(), alloy_rlp::encode_fixed_size(v))),
-            ),
-            code_hash: ro::primitives::B256::from_slice(acc.info.code_hash.as_slice()),
         }
     }
 }
