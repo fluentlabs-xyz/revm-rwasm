@@ -41,9 +41,9 @@ use fluentbase_types::{Address, ExitCode};
 use revm::primitives::EVMError;
 use thiserror::Error;
 use walkdir::{DirEntry, WalkDir};
-use revm_oiginal as ro;
+use revm as ro;
 use ro::primitives as rop;
-use revm_oiginal::primitives::EVMResultGeneric;
+use revm::primitives::EVMResultGeneric;
 use crate::cmd::statetest::helpers::{convert_address, convert_b256, convert_bytes, convert_hashmap};
 use crate::cmd::statetest::merkle_trie::state_merkle_trie_root_original;
 
@@ -137,32 +137,33 @@ fn skip_test(path: &Path) -> bool {
     ) || path_str.contains("stEOF")
 }
 
-fn check_evm_execution<EXT>(
+fn check_evm_execution<EXT1, EXT2>(
     test: &Test,
     spec_name: &SpecName,
     expected_output: Option<&Bytes>,
     test_name: &str,
-    // exec_result: &Result<ExecutionResult, EVMError<ExitCode>>,
+    exec_result: &Result<ExecutionResult, EVMError<ExitCode>>,
     exec_result_original: &EVMResultGeneric<rop::ExecutionResult, Infallible>,
-    // evm: &Evm<'_, EXT, &mut State<EmptyDB>>,
-    evm_original: &ro::Evm<'_, EXT, &mut ro::State<ro::db::EmptyDB>>,
+    evm: &Evm<'_, EXT1, &mut State<EmptyDB>>,
+    evm_original: &ro::Evm<'_, EXT2, &mut ro::State<ro::db::EmptyDB>>,
     print_json_outcome: bool,
 ) -> Result<(), TestError> {
     // let logs_root = log_rlp_hash(exec_result.as_ref().map(|r| r.logs()).unwrap_or_default());
-    let logs_root = log_rlp_hash(exec_result_original.as_ref().map(|r| unsafe { transmute(r.logs()) }).unwrap_or_default());
-    let state_root = state_merkle_trie_root_original(evm_original.context.evm.db.cache.trie_account());
+    let logs_root_original = log_rlp_hash(exec_result_original.as_ref().map(|r| unsafe { transmute(r.logs()) }).unwrap_or_default());
+    let state_root = state_merkle_trie_root_original(evm.context.evm.db.cache.trie_account());
+    let state_root_original = state_merkle_trie_root_original(evm_original.context.evm.db.cache.trie_account());
 
     let print_json_output = |error: Option<String>| {
         if print_json_outcome {
             let json = json!({
-                    "stateRoot": state_root,
-                    "logsRoot": logs_root,
+                    "stateRoot": state_root_original,
+                    "logsRoot": logs_root_original,
                     "output": exec_result_original.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
                     "gasUsed": exec_result_original.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
                     "pass": error.is_none(),
                     "errorMsg": error.unwrap_or_default(),
                     "evmResult": exec_result_original.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
-                    "postLogsHash": logs_root,
+                    "postLogsHash": logs_root_original,
                     "fork": evm_original.handler.cfg().spec_id,
                     "test": test_name,
                     "d": test.indexes.data,
@@ -220,10 +221,10 @@ fn check_evm_execution<EXT>(
         }
     }
 
-    if logs_root != test.logs {
+    if logs_root_original != test.logs {
         let kind = TestErrorKind::LogsRootMismatch {
             spec_name: spec_name.clone(),
-            got: logs_root,
+            got: logs_root_original,
             expected: test.logs,
         };
         print_json_output(Some(kind.to_string()));
@@ -233,10 +234,10 @@ fn check_evm_execution<EXT>(
         });
     }
 
-    if state_root.0 != test.hash.0 {
+    if state_root_original.0 != test.hash.0 {
         let kind = TestErrorKind::StateRootMismatch {
             spec_name: spec_name.clone(),
-            got: state_root.0.into(),
+            got: state_root_original.0.into(),
             expected: test.hash,
         };
         print_json_output(Some(kind.to_string()));
@@ -269,57 +270,72 @@ pub fn execute_test_suite(
 
     for (name, unit) in suite.0 {
         // Create database and insert cache
-        // let mut cache_state = revm::CacheState::new(false);
-        let mut cache_state = ro::CacheState::new(false);
+        let mut cache_state = revm::CacheState::new(false);
+        let mut cache_state_original = ro::CacheState::new(false);
         for (address, info) in unit.pre {
-            // let acc_info = revm::primitives::AccountInfo {
-            //     balance: info.balance,
-            //     code_hash: keccak256(&info.code),
-            //     rwasm_code_hash: Default::default(),
-            //     code: Some(Bytecode::new_raw(info.code)),
-            //     nonce: info.nonce,
-            //     rwasm_code: None,
-            // };
-            let acc_info = ro::primitives::AccountInfo {
+            let acc_info = revm::primitives::AccountInfo {
+                balance: info.balance,
+                code_hash: keccak256(&info.code),
+                rwasm_code_hash: Default::default(),
+                code: Some(Bytecode::new_raw(info.code.clone())),
+                nonce: info.nonce,
+                rwasm_code: None,
+            };
+            let acc_info_original = ro::primitives::AccountInfo {
                 balance: info.balance,
                 code_hash: convert_b256(&keccak256(&info.code)),
-                // rwasm_code_hash: Default::default(),
                 code: Some(ro::primitives::Bytecode::new_raw(convert_bytes(&info.code))),
                 nonce: info.nonce,
-                // rwasm_code: None,
+                ..Default::default()
             };
-            cache_state.insert_account_with_storage(convert_address(&address), acc_info, convert_hashmap(&info.storage));
+            cache_state.insert_account_with_storage(address, acc_info, info.storage.clone());
+            cache_state_original.insert_account_with_storage(convert_address(&address), acc_info_original, convert_hashmap(&info.storage));
         }
 
-        let mut env = Box::<rop::Env>::default();
-        // let mut env = Box::<Env>::default();
+        let mut env = Box::<Env>::default();
+        let mut env_original = Box::<rop::Env>::default();
         // for mainnet
         env.cfg.chain_id = 1;
+        env_original.cfg.chain_id = 1;
         // env.cfg.spec_id is set down the road
 
         // block env
         env.block.number = unit.env.current_number;
-        // env.block.coinbase = unit.env.current_coinbase;
-        env.block.coinbase = rop::Address::new(unit.env.current_coinbase.into_array());
+        env_original.block.number = unit.env.current_number;
+
+        env.block.coinbase = unit.env.current_coinbase;
+        env_original.block.coinbase = convert_address(&unit.env.current_coinbase);
+
         env.block.timestamp = unit.env.current_timestamp;
+        env_original.block.timestamp = unit.env.current_timestamp;
+
         env.block.gas_limit = unit.env.current_gas_limit;
+        env_original.block.gas_limit = unit.env.current_gas_limit;
+
         env.block.basefee = unit.env.current_base_fee.unwrap_or_default();
+        env_original.block.basefee = unit.env.current_base_fee.unwrap_or_default();
+
         env.block.difficulty = unit.env.current_difficulty;
+        env_original.block.difficulty = unit.env.current_difficulty;
+
         // after the Merge prevrandao replaces mix_hash field in block and replaced difficulty
         // opcode in EVM.
-        // env.block.prevrandao = unit.env.current_random;
-        env.block.prevrandao = unit.env.current_random.map(|v| {
-            rop::B256::from_slice(v.as_slice())
-        });
+        env.block.prevrandao = unit.env.current_random;
+        env_original.block.prevrandao = unit.env.current_random.map(|v| convert_b256(&v));
         // EIP-4844
         if let Some(current_excess_blob_gas) = unit.env.current_excess_blob_gas {
-            env.block
-                .set_blob_excess_gas_and_price(current_excess_blob_gas.to());
+            env.block.set_blob_excess_gas_and_price(current_excess_blob_gas.to());
+            env_original.block.set_blob_excess_gas_and_price(current_excess_blob_gas.to());
         } else if let (Some(parent_blob_gas_used), Some(parent_excess_blob_gas)) = (
             unit.env.parent_blob_gas_used,
             unit.env.parent_excess_blob_gas,
         ) {
             env.block
+                .set_blob_excess_gas_and_price(calc_excess_blob_gas(
+                    parent_blob_gas_used.to(),
+                    parent_excess_blob_gas.to(),
+                ));
+            env_original.block
                 .set_blob_excess_gas_and_price(calc_excess_blob_gas(
                     parent_blob_gas_used.to(),
                     parent_excess_blob_gas.to(),
@@ -336,20 +352,29 @@ pub fn execute_test_suite(
                 kind: TestErrorKind::UnknownPrivateKey(unit.transaction.secret_key),
             })?
         };
-        // env.tx.caller = caller;
-        env.tx.caller = rop::Address::new(caller.into_array());
-        env.tx.gas_price = unit
+        env.tx.caller = caller;
+        env_original.tx.caller = convert_address(&caller);
+
+        let gas_price = unit
             .transaction
             .gas_price
             .or(unit.transaction.max_fee_per_gas)
             .unwrap_or_default();
-        env.tx.gas_priority_fee = unit.transaction.max_priority_fee_per_gas;
+        env.tx.gas_price = gas_price;
+        env_original.tx.gas_price = gas_price;
+
+        let gas_priority_fee = unit.transaction.max_priority_fee_per_gas;
+        env.tx.gas_priority_fee = gas_priority_fee;
+        env_original.tx.gas_priority_fee = gas_priority_fee;
+
         // EIP-4844
         let blob_hashes = unit.transaction.blob_versioned_hashes;
-        // env.tx.blob_hashes = blob_hashes;
-        env.tx.blob_hashes = blob_hashes
-            .iter().map(|v| rop::B256::from_slice(v.as_slice())).collect();
-        env.tx.max_fee_per_blob_gas = unit.transaction.max_fee_per_blob_gas;
+        env.tx.blob_hashes = blob_hashes.clone();
+        env_original.tx.blob_hashes = blob_hashes.iter().map(|v| convert_b256(&v)).collect();
+
+        let max_fee_per_blob_gas = unit.transaction.max_fee_per_blob_gas;
+        env.tx.max_fee_per_blob_gas = max_fee_per_blob_gas;
+        env_original.tx.max_fee_per_blob_gas = max_fee_per_blob_gas;
 
         // post and execution
         for (spec_name, tests) in unit.post {
@@ -369,6 +394,7 @@ pub fn execute_test_suite(
 
             for (index, test) in tests.into_iter().enumerate() {
                 env.tx.gas_limit = unit.transaction.gas_limit[test.indexes.gas].saturating_to();
+                env_original.tx.gas_limit = unit.transaction.gas_limit[test.indexes.gas].saturating_to();
 
                 let data = unit
                     .transaction
@@ -376,9 +402,12 @@ pub fn execute_test_suite(
                     .get(test.indexes.data)
                     .unwrap()
                     .clone();
-                // env.tx.data = data;
-                env.tx.data = rop::Bytes::copy_from_slice(&data);
-                env.tx.value = unit.transaction.value[test.indexes.value];
+                env.tx.data = data.clone();
+                env_original.tx.data = convert_bytes(&data);
+
+                let value = unit.transaction.value[test.indexes.value];
+                env.tx.value = value;
+                env_original.tx.value = value;
 
                 let access_list: Vec<(Address, Vec<U256>)> = unit
                     .transaction
@@ -397,57 +426,42 @@ pub fn execute_test_suite(
                         )
                     })
                     .collect();
-                // env.tx.access_list = access_list;
-                env.tx.access_list = unsafe { transmute(access_list) };
-                // env.tx.access_list = access_list.iter().map(|(addr, arr)| {
-                //     (
-                //         rop::Address::from_slice(addr.as_slice()),
-                //         arr//.iter().map(|v| {rop::U256::from_limbs(v.as_limbs().clone())})
-                //     )
-                // }).collect();
+                env.tx.access_list = access_list.clone();
+                env_original.tx.access_list = unsafe { transmute(access_list) };
 
                 let to = match unit.transaction.to {
                     Some(add) => TransactTo::Call(add),
                     None => TransactTo::Create(CreateScheme::Create),
                 };
-                // env.tx.transact_to = to;
-                env.tx.transact_to = match to {
-                    TransactTo::Call(v) => {
-                        rop::TransactTo::Call(rop::Address::from_slice(v.as_slice()))
-                    }
-                    TransactTo::Create(v) => {
-                        match v {
-                            CreateScheme::Create => {
-                                rop::TransactTo::Create(rop::CreateScheme::Create)
-                            }
-                            CreateScheme::Create2 { salt } => {
-                                rop::TransactTo::Create(rop::CreateScheme::Create2 { salt })
-                            }
-                        }
-                    }
-                };
+                env.tx.transact_to = to.clone();
+                env_original.tx.transact_to = unsafe { transmute(to) };
 
                 let mut cache = cache_state.clone();
                 cache.set_state_clear_flag(SpecId::enabled(
                     spec_id,
                     revm::primitives::SpecId::SPURIOUS_DRAGON,
                 ));
-                // let mut state = revm::db::State::builder()
-                //     .with_cached_prestate(cache)
-                //     .with_bundle_update()
-                //     .build();
-                let mut state = ro::db::State::builder()
+                let mut cache_original = cache_state_original.clone();
+                cache_original.set_state_clear_flag(SpecId::enabled(
+                    spec_id,
+                    revm::primitives::SpecId::SPURIOUS_DRAGON,
+                ));
+                let mut state = revm::db::State::builder()
                     .with_cached_prestate(cache)
                     .with_bundle_update()
                     .build();
-                // let mut evm = Evm::builder()
-                //     .with_db(&mut state)
-                //     .modify_env(|e| *e = env.clone())
-                //     .with_spec_id(spec_id)
-                //     .build();
-                let mut evm = ro::Evm::builder()
+                let mut state_original = ro::db::State::builder()
+                    .with_cached_prestate(cache_original)
+                    .with_bundle_update()
+                    .build();
+                let mut evm = Evm::builder()
                     .with_db(&mut state)
                     .modify_env(|e| *e = env.clone())
+                    .with_spec_id(spec_id)
+                    .build();
+                let mut evm_original = ro::Evm::builder()
+                    .with_db(&mut state_original)
+                    .modify_env(|e| *e = env_original.clone())
                     .with_spec_id(unsafe { transmute(spec_id) })
                     .build();
 
@@ -459,13 +473,22 @@ pub fn execute_test_suite(
                             Box::new(stderr()),
                             false,
                         ))
-                        // TODO do we need it?
+                        // TODO do we need this?
                         // .append_handler_register(inspector_handle_register)
-                        // .append_handler_register(unsafe { transmute(ro::inspector::inspector_handle_register) })
+                        .build();
+                    let mut evm_original = evm_original
+                        .modify()
+                        .reset_handler_with_external_context(TracerEip3155::new(
+                            Box::new(stderr()),
+                            false,
+                        ))
+                        // TODO do we need this?
+                        // .append_handler_register(inspector_handle_register)
                         .build();
 
                     let timer = Instant::now();
                     let res = evm.transact_commit();
+                    let res_original = evm_original.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
 
                     let Err(e) = check_evm_execution(
@@ -474,16 +497,19 @@ pub fn execute_test_suite(
                         unit.out.as_ref(),
                         &name,
                         &res,
+                        &res_original,
                         &evm,
+                        &evm_original,
                         print_json_outcome,
                     ) else {
                         continue;
                     };
                     // reset external context
-                    (e, res)
+                    (e, res_original)
                 } else {
                     let timer = Instant::now();
                     let res = evm.transact_commit();
+                    let res_original = evm_original.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
 
                     // dump state and traces if test failed
@@ -493,13 +519,15 @@ pub fn execute_test_suite(
                         unit.out.as_ref(),
                         &name,
                         &res,
+                        &res_original,
                         &evm,
+                        &evm_original,
                         print_json_outcome,
                     );
                     let Err(e) = output else {
                         continue;
                     };
-                    (e, res)
+                    (e, res_original)
                 };
 
                 // print only once or
@@ -515,18 +543,31 @@ pub fn execute_test_suite(
                     spec_id,
                     revm::primitives::SpecId::SPURIOUS_DRAGON,
                 ));
-                // let state = revm::db::State::builder()
-                let state = ro::db::State::builder()
+                let mut cache_original = cache_state_original.clone();
+                cache_original.set_state_clear_flag(SpecId::enabled(
+                    spec_id,
+                    revm::primitives::SpecId::SPURIOUS_DRAGON,
+                ));
+                let state = revm::db::State::builder()
                     .with_cached_prestate(cache)
+                    .with_bundle_update()
+                    .build();
+                let state_original = ro::db::State::builder()
+                    .with_cached_prestate(cache_original)
                     .with_bundle_update()
                     .build();
 
                 let path = path.display();
                 println!("\nTraces:");
-                // let mut evm = Evm::builder()
-                let mut evm = ro::Evm::builder()
+                let mut evm = Evm::builder()
                     .with_spec_id(unsafe { transmute(spec_id) })
                     .with_db(state)
+                    .with_external_context(TracerEip3155::new(Box::new(stdout()), false))
+                    // .append_handler_register(inspector_handle_register)
+                    .build();
+                let mut evm_original = ro::Evm::builder()
+                    .with_spec_id(unsafe { transmute(spec_id) })
+                    .with_db(state_original)
                     .with_external_context(TracerEip3155::new(Box::new(stdout()), false))
                     // .append_handler_register(inspector_handle_register)
                     .build();
@@ -537,7 +578,7 @@ pub fn execute_test_suite(
                 println!("\nState before: {cache_state:#?}");
                 println!("\nState after: {:#?}", evm.context.evm.db.cache);
                 println!("\nSpecification: {spec_id:?}");
-                println!("\nEnvironment: {env:#?}");
+                println!("\nEnvironment: {env_original:#?}");
                 println!("\nTest name: {name:?} (index: {index}, path: {path}) failed:\n{e}");
 
                 return Err(e);

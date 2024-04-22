@@ -15,25 +15,26 @@ hashbrown = "0.14"
 indicatif = "0.17"
 microbench = "0.5"
 plain_hasher = "0.2"
-revm = { package = "fluentbase-revm", path = "../../../fluentbase/crates/revm", default-features = false, features = [
+fluentbase-revm = { package = "fluentbase-revm", path = "../../../fluentbase/crates/revm", default-features = false, features = [
     "ethersdb",
     "std",
     "serde-json",
     "c-kzg",
 ] }
-revm-oiginal = { package = "revm", path = "../../../../other/revm/crates/revm", version = "8.0.0", default-features = false, features = [
-    "ethersdb",
-    "std",
-    "serde-json",
-    "c-kzg",
-] }
+revm = { path = "../../crates/revm" }
+#revm = { package = "revm", path = "../../../../other/revm/crates/revm", version = "7.2.0", default-features = false, features = [
+#    "ethersdb",
+#    "std",
+#    "serde-json",
+#    "c-kzg",
+#] }
 #revm-oiginal-primitives = { package = "revm-primitives", path = "../../../../other/revm/crates/primitives", default-features = false, features = [
 #    "ethersdb",
 #    "std",
 #    "serde-json",
 #    "c-kzg",
 #] }
-#revm-oiginal = { package = "revme", git = "https://github.com/bluealloy/revm", version = "8.0.0", default-features = false, features = [
+#revm-oiginal = { package = "revme", git = "https://github.com/bluealloy/revm", version = "7.2.0", default-features = false, features = [
 #    "ethersdb",
 #    "std",
 #    "serde-json",
