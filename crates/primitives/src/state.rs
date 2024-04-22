@@ -272,7 +272,8 @@ impl AccountInfo {
     /// - balance is zero
     /// - nonce is zero
     pub fn is_empty(&self) -> bool {
-        let code_empty = self.is_empty_code_hash() || self.code_hash == B256::ZERO;
+        let code_empty = self.is_empty_code_hash()
+            || self.code_hash == B256::ZERO && self.rwasm_code_hash == B256::ZERO;
         code_empty && self.balance == U256::ZERO && self.nonce == 0
     }
 
@@ -294,6 +295,14 @@ impl AccountInfo {
 
     /// Returns true if the code hash is the Keccak256 hash of the empty string `""`.
     #[inline]
+    #[cfg(feature = "rwasm")]
+    pub fn is_empty_code_hash(&self) -> bool {
+        self.code_hash == KECCAK_EMPTY && self.rwasm_code_hash == crate::POSEIDON_EMPTY
+    }
+
+    /// Returns true if the code hash is the Keccak256 hash of the empty string `""`.
+    #[inline]
+    #[cfg(not(feature = "rwasm"))]
     pub fn is_empty_code_hash(&self) -> bool {
         self.code_hash == KECCAK_EMPTY
     }
