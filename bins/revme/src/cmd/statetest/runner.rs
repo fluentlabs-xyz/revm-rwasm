@@ -146,19 +146,19 @@ fn check_evm_execution<EXT1, EXT2>(
     expected_output: Option<&Bytes>,
     test_name: &str,
     exec_result: &Result<ExecutionResult, EVMError<Infallible>>,
-    exec_result2: Option<&Result<ExecutionResult, EVMError<ExitCode>>>,
+    exec_result2: &Result<ExecutionResult, EVMError<ExitCode>>,
     evm: &Evm<'_, EXT1, &mut State<EmptyDB>>,
-    evm2: Option<
-        &fluentbase_revm::Evm<
-            '_,
-            EXT2,
-            &mut fluentbase_revm::State<fluentbase_revm::db::EmptyDBTyped<ExitCode>>,
-        >,
+    evm2: &fluentbase_revm::Evm<
+        '_,
+        EXT2,
+        &mut fluentbase_revm::State<fluentbase_revm::db::EmptyDBTyped<ExitCode>>,
     >,
     print_json_outcome: bool,
 ) -> Result<(), TestError> {
     let logs_root = log_rlp_hash(exec_result.as_ref().map(|r| r.logs()).unwrap_or_default());
-    // let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
+    let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
+
+    assert_eq!(logs_root, logs_root2, "LOGS ARE CORRUPTED!!!");
 
     let state_root = state_merkle_trie_root(evm.context.evm.db.cache.trie_account().into_iter());
     // let state_root2 =
@@ -521,9 +521,9 @@ pub fn execute_test_suite(
                         unit.out.as_ref(),
                         &name,
                         &res,
-                        None, //&res2,
+                        &res2,
                         &evm,
-                        None, //&evm2,
+                        &evm2,
                         print_json_outcome,
                     ) else {
                         continue;
@@ -543,9 +543,9 @@ pub fn execute_test_suite(
                         unit.out.as_ref(),
                         &name,
                         &res,
-                        None, // &res2,
+                        &res2,
                         &evm,
-                        None, //&evm2,
+                        &evm2,
                         print_json_outcome,
                     );
                     let Err(e) = output else {
