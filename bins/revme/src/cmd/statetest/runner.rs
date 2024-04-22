@@ -3,6 +3,8 @@ use super::{
     models::{SpecName, Test, TestSuite},
     utils::recover_address,
 };
+use crate::cmd::statetest::merkle_trie::state_merkle_trie_root2;
+use fluentbase_types::{Address, ExitCode};
 use indicatif::{ProgressBar, ProgressDrawTarget};
 use revm::{
     db::EmptyDB,
@@ -12,8 +14,11 @@ use revm::{
     primitives::{
         calc_excess_blob_gas,
         keccak256,
+        AccountInfo,
         Bytecode,
         Bytes,
+        EVMError,
+        EVMResultGeneric,
         Env,
         ExecutionResult,
         SpecId,
@@ -26,7 +31,9 @@ use revm::{
 };
 use serde_json::json;
 use std::{
+    convert::Infallible,
     io::{stderr, stdout},
+    mem::transmute,
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -35,15 +42,8 @@ use std::{
     },
     time::{Duration, Instant},
 };
-use std::convert::Infallible;
-use std::mem::transmute;
-use fluentbase_types::{Address, ExitCode};
-use revm::primitives::EVMError;
 use thiserror::Error;
 use walkdir::{DirEntry, WalkDir};
-use revm_original as ro;
-use ro::primitives as rop;
-use revm::primitives::EVMResultGeneric;
 
 #[derive(Debug, Error)]
 #[error("Test {name} failed: {kind}")]
@@ -140,32 +140,34 @@ fn check_evm_execution<EXT1, EXT2>(
     spec_name: &SpecName,
     expected_output: Option<&Bytes>,
     test_name: &str,
-    exec_result: &Result<ExecutionResult, EVMError<ExitCode>>,
-    exec_result_original: &EVMResultGeneric<rop::ExecutionResult, Infallible>,
+    exec_result: &Result<ExecutionResult, EVMError<Infallible>>,
+    exec_result2: &Result<ExecutionResult, EVMError<ExitCode>>,
     evm: &Evm<'_, EXT1, &mut State<EmptyDB>>,
-    evm_original: &ro::Evm<'_, EXT2, &mut ro::State<ro::db::EmptyDB>>,
+    evm2: &fluentbase_revm::Evm<
+        '_,
+        EXT2,
+        &mut fluentbase_revm::State<fluentbase_revm::db::EmptyDBTyped<ExitCode>>,
+    >,
     print_json_outcome: bool,
 ) -> Result<(), TestError> {
-    // let logs_root = log_rlp_hash(exec_result.as_ref().map(|r| r.logs()).unwrap_or_default());
-    let logs_root_original = log_rlp_hash(exec_result_original.as_ref().map(|r| unsafe { transmute(r.logs()) }).unwrap_or_default());
-    let state_root = state_merkle_trie_root(evm.context.evm.db.cache.trie_account());
-    let accounts = evm_original.context.evm.db.cache.trie_account().into_iter().map(|(addr, acc)| {
-        (addr, &revm::db::PlainAccount { info: unsafe { transmute(acc.info.clone()) }, storage: acc.storage.clone() })
-    });
-    let state_root_original = state_merkle_trie_root(accounts);
+    let logs_root = log_rlp_hash(exec_result.as_ref().map(|r| r.logs()).unwrap_or_default());
+    let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
+
+    let state_root = state_merkle_trie_root(evm.context.evm.db.cache.trie_account().into_iter());
+    let state_root2 = state_merkle_trie_root2(evm2.context.evm.db.cache.trie_account().into_iter());
 
     let print_json_output = |error: Option<String>| {
         if print_json_outcome {
             let json = json!({
-                    "stateRoot": state_root_original,
-                    "logsRoot": logs_root_original,
-                    "output": exec_result_original.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
-                    "gasUsed": exec_result_original.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
+                    "stateRoot": state_root,
+                    "logsRoot": logs_root,
+                    "output": exec_result.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
+                    "gasUsed": exec_result.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
                     "pass": error.is_none(),
                     "errorMsg": error.unwrap_or_default(),
-                    "evmResult": exec_result_original.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
-                    "postLogsHash": logs_root_original,
-                    "fork": evm_original.handler.cfg().spec_id,
+                    "evmResult": exec_result.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
+                    "postLogsHash": logs_root,
+                    "fork": evm.handler.cfg().spec_id,
                     "test": test_name,
                     "d": test.indexes.data,
                     "g": test.indexes.gas,
@@ -185,18 +187,17 @@ fn check_evm_execution<EXT1, EXT2>(
     // it does not matter.
     // Test where this happens: `tests/GeneralStateTests/stTransactionTest/NoSrcAccountCreate.json`
     // and you can check that we have only two "hash" values for before and after state clear.
-    match (&test.expect_exception, exec_result_original) {
+    match (&test.expect_exception, exec_result) {
         // do nothing
         (None, Ok(result)) => {
             // check output
             let result_output = result.output();
             if let Some((expected_output, output)) = expected_output.zip(result_output) {
-                let output: &Bytes = unsafe { transmute(output) };
                 if expected_output != output {
                     let kind = TestErrorKind::UnexpectedOutput {
                         spec_name: spec_name.clone(),
                         expected_output: Some(expected_output.clone()),
-                        got_output: unsafe { transmute(result.output().cloned()) },
+                        got_output: result.output().cloned(),
                     };
                     print_json_output(Some(kind.to_string()));
                     return Err(TestError {
@@ -212,7 +213,7 @@ fn check_evm_execution<EXT1, EXT2>(
             let kind = TestErrorKind::UnexpectedException {
                 spec_name: spec_name.clone(),
                 expected_exception: test.expect_exception.clone(),
-                got_exception: exec_result_original.clone().err().map(|e| e.to_string()),
+                got_exception: exec_result.clone().err().map(|e| e.to_string()),
             };
             print_json_output(Some(kind.to_string()));
             return Err(TestError {
@@ -222,10 +223,10 @@ fn check_evm_execution<EXT1, EXT2>(
         }
     }
 
-    if logs_root_original != test.logs {
+    if logs_root != test.logs {
         let kind = TestErrorKind::LogsRootMismatch {
             spec_name: spec_name.clone(),
-            got: logs_root_original,
+            got: logs_root,
             expected: test.logs,
         };
         print_json_output(Some(kind.to_string()));
@@ -235,10 +236,10 @@ fn check_evm_execution<EXT1, EXT2>(
         });
     }
 
-    if state_root_original.0 != test.hash.0 {
+    if state_root.0 != test.hash.0 {
         let kind = TestErrorKind::StateRootMismatch {
             spec_name: spec_name.clone(),
-            got: state_root_original.0.into(),
+            got: state_root.0.into(),
             expected: test.hash,
         };
         print_json_output(Some(kind.to_string()));
@@ -272,61 +273,43 @@ pub fn execute_test_suite(
     for (name, unit) in suite.0 {
         // Create database and insert cache
         let mut cache_state = revm::CacheState::new(false);
-        let mut cache_state_original = ro::CacheState::new(false);
+        let mut cache_state2 = fluentbase_revm::CacheState::new(false);
         for (address, info) in unit.pre {
-            let acc_info = revm::primitives::AccountInfo {
+            let acc_info = AccountInfo {
                 balance: info.balance,
                 code_hash: keccak256(&info.code),
-                rwasm_code_hash: Default::default(),
                 code: Some(Bytecode::new_raw(info.code.clone())),
                 nonce: info.nonce,
-                rwasm_code: None,
-            };
-            let acc_info_original = ro::primitives::AccountInfo {
-                balance: info.balance,
-                code_hash: (keccak256(&info.code)),
-                code: Some(ro::primitives::Bytecode::new_raw((info.code))),
-                nonce: info.nonce,
+                // TODO(stas): "wanna put rWASM bytecode here?"
                 ..Default::default()
             };
-            cache_state.insert_account_with_storage(address, acc_info, info.storage.clone());
-            cache_state_original.insert_account_with_storage((address), acc_info_original, (info.storage));
+            cache_state.insert_account_with_storage(
+                address,
+                acc_info.clone(),
+                info.storage.clone(),
+            );
+            cache_state2.insert_account_with_storage(address, acc_info, info.storage.clone());
         }
 
         let mut env = Box::<Env>::default();
-        let mut env_original = Box::<rop::Env>::default();
         // for mainnet
         env.cfg.chain_id = 1;
-        env_original.cfg.chain_id = 1;
         // env.cfg.spec_id is set down the road
 
         // block env
         env.block.number = unit.env.current_number;
-        env_original.block.number = unit.env.current_number;
-
         env.block.coinbase = unit.env.current_coinbase;
-        env_original.block.coinbase = (unit.env.current_coinbase);
-
         env.block.timestamp = unit.env.current_timestamp;
-        env_original.block.timestamp = unit.env.current_timestamp;
-
         env.block.gas_limit = unit.env.current_gas_limit;
-        env_original.block.gas_limit = unit.env.current_gas_limit;
-
         env.block.basefee = unit.env.current_base_fee.unwrap_or_default();
-        env_original.block.basefee = unit.env.current_base_fee.unwrap_or_default();
-
         env.block.difficulty = unit.env.current_difficulty;
-        env_original.block.difficulty = unit.env.current_difficulty;
-
         // after the Merge prevrandao replaces mix_hash field in block and replaced difficulty
         // opcode in EVM.
         env.block.prevrandao = unit.env.current_random;
-        env_original.block.prevrandao = unit.env.current_random;
         // EIP-4844
         if let Some(current_excess_blob_gas) = unit.env.current_excess_blob_gas {
-            env.block.set_blob_excess_gas_and_price(current_excess_blob_gas.to());
-            env_original.block.set_blob_excess_gas_and_price(current_excess_blob_gas.to());
+            env.block
+                .set_blob_excess_gas_and_price(current_excess_blob_gas.to());
         } else if let (Some(parent_blob_gas_used), Some(parent_excess_blob_gas)) = (
             unit.env.parent_blob_gas_used,
             unit.env.parent_excess_blob_gas,
@@ -336,16 +319,10 @@ pub fn execute_test_suite(
                     parent_blob_gas_used.to(),
                     parent_excess_blob_gas.to(),
                 ));
-            env_original.block
-                .set_blob_excess_gas_and_price(calc_excess_blob_gas(
-                    parent_blob_gas_used.to(),
-                    parent_excess_blob_gas.to(),
-                ));
         }
 
         // tx env
-        let caller
-            = if let Some(address) = unit.transaction.sender {
+        let caller = if let Some(address) = unit.transaction.sender {
             address
         } else {
             recover_address(unit.transaction.secret_key.as_slice()).ok_or_else(|| TestError {
@@ -354,7 +331,6 @@ pub fn execute_test_suite(
             })?
         };
         env.tx.caller = caller;
-        env_original.tx.caller = (caller);
 
         let gas_price = unit
             .transaction
@@ -362,20 +338,16 @@ pub fn execute_test_suite(
             .or(unit.transaction.max_fee_per_gas)
             .unwrap_or_default();
         env.tx.gas_price = gas_price;
-        env_original.tx.gas_price = gas_price;
 
         let gas_priority_fee = unit.transaction.max_priority_fee_per_gas;
         env.tx.gas_priority_fee = gas_priority_fee;
-        env_original.tx.gas_priority_fee = gas_priority_fee;
 
         // EIP-4844
         let blob_hashes = unit.transaction.blob_versioned_hashes;
         env.tx.blob_hashes = blob_hashes.clone();
-        env_original.tx.blob_hashes = blob_hashes;
 
         let max_fee_per_blob_gas = unit.transaction.max_fee_per_blob_gas;
         env.tx.max_fee_per_blob_gas = max_fee_per_blob_gas;
-        env_original.tx.max_fee_per_blob_gas = max_fee_per_blob_gas;
 
         // post and execution
         for (spec_name, tests) in unit.post {
@@ -388,14 +360,13 @@ pub fn execute_test_suite(
                 continue;
             }
             if spec_name.lt(&SpecName::Cancun) {
-                continue
+                continue;
             }
 
             let spec_id = spec_name.to_spec_id();
 
             for (index, test) in tests.into_iter().enumerate() {
                 env.tx.gas_limit = unit.transaction.gas_limit[test.indexes.gas].saturating_to();
-                env_original.tx.gas_limit = unit.transaction.gas_limit[test.indexes.gas].saturating_to();
 
                 let data = unit
                     .transaction
@@ -404,11 +375,9 @@ pub fn execute_test_suite(
                     .unwrap()
                     .clone();
                 env.tx.data = data.clone();
-                env_original.tx.data = (data);
 
                 let value = unit.transaction.value[test.indexes.value];
                 env.tx.value = value;
-                env_original.tx.value = value;
 
                 let access_list: Vec<(Address, Vec<U256>)> = unit
                     .transaction
@@ -428,31 +397,20 @@ pub fn execute_test_suite(
                     })
                     .collect();
                 env.tx.access_list = access_list.clone();
-                env_original.tx.access_list = unsafe { transmute(access_list) };
 
                 let to = match unit.transaction.to {
                     Some(add) => TransactTo::Call(add),
                     None => TransactTo::Create(CreateScheme::Create),
                 };
                 env.tx.transact_to = to.clone();
-                env_original.tx.transact_to = unsafe { transmute(to) };
 
                 let mut cache = cache_state.clone();
-                cache.set_state_clear_flag(SpecId::enabled(
-                    spec_id,
-                    revm::primitives::SpecId::SPURIOUS_DRAGON,
-                ));
-                let mut cache_original = cache_state_original.clone();
-                cache_original.set_state_clear_flag(SpecId::enabled(
-                    spec_id,
-                    revm::primitives::SpecId::SPURIOUS_DRAGON,
-                ));
+                cache.set_state_clear_flag(SpecId::enabled(spec_id, SpecId::SPURIOUS_DRAGON));
+                let mut cache2 = cache_state2.clone();
+                cache2.set_state_clear_flag(SpecId::enabled(spec_id, SpecId::SPURIOUS_DRAGON));
+
                 let mut state = revm::db::State::builder()
                     .with_cached_prestate(cache)
-                    .with_bundle_update()
-                    .build();
-                let mut state_original = ro::db::State::builder()
-                    .with_cached_prestate(cache_original)
                     .with_bundle_update()
                     .build();
                 let mut evm = Evm::builder()
@@ -460,10 +418,17 @@ pub fn execute_test_suite(
                     .modify_env(|e| *e = env.clone())
                     .with_spec_id(spec_id)
                     .build();
-                let mut evm_original = ro::Evm::builder()
-                    .with_db(&mut state_original)
-                    .modify_env(|e| *e = env_original.clone())
-                    .with_spec_id(unsafe { transmute(spec_id) })
+
+                let mut state2 = fluentbase_revm::db::StateBuilder::<
+                    fluentbase_revm::db::EmptyDBTyped<ExitCode>,
+                >::default()
+                .with_cached_prestate(cache2)
+                .with_bundle_update()
+                .build();
+                let mut evm2 = fluentbase_revm::Evm::builder()
+                    .with_db(&mut state2)
+                    .modify_env(|e| *e = env.clone())
+                    .with_spec_id(spec_id)
                     .build();
 
                 // do the deed
@@ -474,22 +439,20 @@ pub fn execute_test_suite(
                             Box::new(stderr()),
                             false,
                         ))
-                        // TODO do we need this?
-                        // .append_handler_register(inspector_handle_register)
+                        .append_handler_register(inspector_handle_register)
                         .build();
-                    let mut evm_original = evm_original
-                        .modify()
-                        .reset_handler_with_external_context(TracerEip3155::new(
-                            Box::new(stderr()),
-                            false,
-                        ))
-                        // TODO do we need this?
-                        // .append_handler_register(inspector_handle_register)
-                        .build();
+                    // let mut evm2 = evm2
+                    //     .modify()
+                    // .reset_handler_with_external_context(TracerEip3155::new(
+                    //     Box::new(stderr()),
+                    //     false,
+                    // ))
+                    // .append_handler_register(fluentbase_revm::inspector_handle_register)
+                    // .build();
 
                     let timer = Instant::now();
                     let res = evm.transact_commit();
-                    let res_original = evm_original.transact_commit();
+                    let res2 = evm2.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
 
                     let Err(e) = check_evm_execution(
@@ -498,19 +461,19 @@ pub fn execute_test_suite(
                         unit.out.as_ref(),
                         &name,
                         &res,
-                        &res_original,
+                        &res2,
                         &evm,
-                        &evm_original,
+                        &evm2,
                         print_json_outcome,
                     ) else {
                         continue;
                     };
                     // reset external context
-                    (e, res_original)
+                    (e, res2)
                 } else {
                     let timer = Instant::now();
                     let res = evm.transact_commit();
-                    let res_original = evm_original.transact_commit();
+                    let res2 = evm2.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
 
                     // dump state and traces if test failed
@@ -520,15 +483,15 @@ pub fn execute_test_suite(
                         unit.out.as_ref(),
                         &name,
                         &res,
-                        &res_original,
+                        &res2,
                         &evm,
-                        &evm_original,
+                        &evm2,
                         print_json_outcome,
                     );
                     let Err(e) = output else {
                         continue;
                     };
-                    (e, res_original)
+                    (e, res2)
                 };
 
                 // print only once or
@@ -538,22 +501,17 @@ pub fn execute_test_suite(
                     return Err(e);
                 }
 
-                // re build to run with tracing
+                // re-build to run with tracing
                 let mut cache = cache_state.clone();
-                cache.set_state_clear_flag(SpecId::enabled(
-                    spec_id,
-                    revm::primitives::SpecId::SPURIOUS_DRAGON,
-                ));
-                let mut cache_original = cache_state_original.clone();
-                cache_original.set_state_clear_flag(SpecId::enabled(
-                    spec_id,
-                    revm::primitives::SpecId::SPURIOUS_DRAGON,
-                ));
+                cache.set_state_clear_flag(SpecId::enabled(spec_id, SpecId::SPURIOUS_DRAGON));
+                let mut cache_original = cache_state2.clone();
+                cache_original
+                    .set_state_clear_flag(SpecId::enabled(spec_id, SpecId::SPURIOUS_DRAGON));
                 let state = revm::db::State::builder()
                     .with_cached_prestate(cache)
                     .with_bundle_update()
                     .build();
-                let state_original = ro::db::State::builder()
+                let state_original = fluentbase_revm::db::State::builder()
                     .with_cached_prestate(cache_original)
                     .with_bundle_update()
                     .build();
@@ -561,25 +519,26 @@ pub fn execute_test_suite(
                 let path = path.display();
                 println!("\nTraces:");
                 let mut evm = Evm::builder()
-                    .with_spec_id(unsafe { transmute(spec_id) })
+                    .with_spec_id(spec_id)
                     .with_db(state)
                     .with_external_context(TracerEip3155::new(Box::new(stdout()), false))
                     // .append_handler_register(inspector_handle_register)
                     .build();
-                let mut evm_original = ro::Evm::builder()
-                    .with_spec_id(unsafe { transmute(spec_id) })
+                let mut evm2 = revm::Evm::builder()
+                    .with_spec_id(spec_id)
                     .with_db(state_original)
                     .with_external_context(TracerEip3155::new(Box::new(stdout()), false))
                     // .append_handler_register(inspector_handle_register)
                     .build();
                 let _ = evm.transact_commit();
+                let _ = evm2.transact_commit();
 
                 println!("\nExecution result: {exec_result:#?}");
                 println!("\nExpected exception: {:?}", test.expect_exception);
                 println!("\nState before: {cache_state:#?}");
                 println!("\nState after: {:#?}", evm.context.evm.db.cache);
                 println!("\nSpecification: {spec_id:?}");
-                println!("\nEnvironment: {env_original:#?}");
+                println!("\nEnvironment: {env:#?}");
                 println!("\nTest name: {name:?} (index: {index}, path: {path}) failed:\n{e}");
 
                 return Err(e);
@@ -648,7 +607,8 @@ pub fn run(
             }
             console_bar.inc(1);
         };
-        handles.push(thread.spawn(f).unwrap());
+        f().unwrap()
+        // handles.push(thread.spawn(f).unwrap());
     }
 
     // join all threads before returning an error

@@ -15,17 +15,18 @@ hashbrown = "0.14"
 indicatif = "0.17"
 microbench = "0.5"
 plain_hasher = "0.2"
-revm = { package = "fluentbase-revm", git = "https://github.com/fluentlabs-xyz/fluentbase", branch = "devel", default-features = false, features = [
+fluentbase-revm = { package = "fluentbase-revm", path = "../../../fluentbase/crates/revm", default-features = false, features = [
     "ethersdb",
     "std",
     "serde-json",
     "c-kzg",
 ] }
-revm-original = { package = "revm", path = "../../crates/revm", default-features = false, features = [
+revm = { package = "revm", path = "../../crates/revm", default-features = false, features = [
     "ethersdb",
     "std",
     "serde-json",
     "c-kzg",
+    "rwasm",
 ] }
 #revm = { package = "revm", path = "../../../../other/revm/crates/revm", version = "7.2.0", default-features = false, features = [
 #    "ethersdb",
