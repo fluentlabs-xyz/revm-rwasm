@@ -21,6 +21,26 @@ revm = { package = "fluentbase-revm", path = "../../../fluentbase/crates/revm", 
     "serde-json",
     "c-kzg",
 ] }
+revm-oiginal = { package = "revm", path = "../../../../other/revm/crates/revm", version = "8.0.0", default-features = false, features = [
+    "ethersdb",
+    "std",
+    "serde-json",
+    "c-kzg",
+] }
+#revm-oiginal-primitives = { package = "revm-primitives", path = "../../../../other/revm/crates/primitives", default-features = false, features = [
+#    "ethersdb",
+#    "std",
+#    "serde-json",
+#    "c-kzg",
+#] }
+#revm-oiginal = { package = "revme", git = "https://github.com/bluealloy/revm", version = "8.0.0", default-features = false, features = [
+#    "ethersdb",
+#    "std",
+#    "serde-json",
+#    "c-kzg",
+#] }
+#revm-oiginal-primitives = { package = "revm-primitives", git = "https://github.com/bluealloy/revm.git", version = "8.0.0", default-features = false }
+fluentbase-types = { path = "../../../fluentbase/crates/types", default-features = false }
 #revm = { path = "../../crates/revm", version = "7.2.0", default-features = false, features = [
 #    "ethersdb",
 #    "std",

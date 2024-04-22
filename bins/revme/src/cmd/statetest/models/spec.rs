@@ -1,7 +1,7 @@
 use revm::primitives::SpecId;
 use serde::Deserialize;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Hash, Clone, Copy)]
 pub enum SpecName {
     Frontier,
     FrontierToHomesteadAt5,
@@ -9,12 +9,15 @@ pub enum SpecName {
     HomesteadToDaoAt5,
     HomesteadToEIP150At5,
     EIP150,
-    EIP158, // EIP-161: State trie clearing
+    EIP158,
+    // EIP-161: State trie clearing
     EIP158ToByzantiumAt5,
     Byzantium,
-    ByzantiumToConstantinopleAt5, // SKIPPED
+    ByzantiumToConstantinopleAt5,
+    // SKIPPED
     ByzantiumToConstantinopleFixAt5,
-    Constantinople, // SKIPPED
+    Constantinople,
+    // SKIPPED
     ConstantinopleFix,
     Istanbul,
     Berlin,
