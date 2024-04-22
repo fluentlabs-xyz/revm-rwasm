@@ -145,7 +145,7 @@ fn check_evm_execution<EXT1, EXT2>(
     spec_name: &SpecName,
     expected_output: Option<&Bytes>,
     test_name: &str,
-    exec_result: &Result<ExecutionResult, EVMError<Infallible>>,
+    exec_result1: &Result<ExecutionResult, EVMError<Infallible>>,
     exec_result2: &Result<ExecutionResult, EVMError<ExitCode>>,
     evm: &Evm<'_, EXT1, &mut State<EmptyDB>>,
     evm2: &fluentbase_revm::Evm<
@@ -155,10 +155,30 @@ fn check_evm_execution<EXT1, EXT2>(
     >,
     print_json_outcome: bool,
 ) -> Result<(), TestError> {
-    let logs_root = log_rlp_hash(exec_result.as_ref().map(|r| r.logs()).unwrap_or_default());
+    let logs_root = log_rlp_hash(exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default());
     let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
 
-    assert_eq!(logs_root, logs_root2, "LOGS ARE CORRUPTED!!!");
+    if logs_root != logs_root2 {
+        // let logs1 = exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default();
+        // let logs2 = exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default();
+        // println!("logs from EVM:");
+        // for log in logs1 {
+        //     println!(
+        //         " - {}: {}",
+        //         hex::encode(log.address),
+        //         hex::encode(&log.topics()[0])
+        //     )
+        // }
+        // println!("logs from FLUENT:");
+        // for log in logs2 {
+        //     println!(
+        //         " - {}: {}",
+        //         hex::encode(log.address),
+        //         hex::encode(&log.topics()[0])
+        //     )
+        // }
+        assert_eq!(logs_root, logs_root2, "LOGS ARE CORRUPTED!!!");
+    }
 
     let state_root = state_merkle_trie_root(evm.context.evm.db.cache.trie_account().into_iter());
     // let state_root2 =
@@ -169,11 +189,11 @@ fn check_evm_execution<EXT1, EXT2>(
             let json = json!({
                     "stateRoot": state_root,
                     "logsRoot": logs_root,
-                    "output": exec_result.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
-                    "gasUsed": exec_result.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
+                    "output": exec_result1.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
+                    "gasUsed": exec_result1.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
                     "pass": error.is_none(),
                     "errorMsg": error.unwrap_or_default(),
-                    "evmResult": exec_result.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
+                    "evmResult": exec_result1.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
                     "postLogsHash": logs_root,
                     "fork": evm.handler.cfg().spec_id,
                     "test": test_name,
@@ -195,7 +215,7 @@ fn check_evm_execution<EXT1, EXT2>(
     // it does not matter.
     // Test where this happens: `tests/GeneralStateTests/stTransactionTest/NoSrcAccountCreate.json`
     // and you can check that we have only two "hash" values for before and after state clear.
-    match (&test.expect_exception, exec_result) {
+    match (&test.expect_exception, exec_result1) {
         // do nothing
         (None, Ok(result)) => {
             // check output
@@ -221,7 +241,7 @@ fn check_evm_execution<EXT1, EXT2>(
             let kind = TestErrorKind::UnexpectedException {
                 spec_name: spec_name.clone(),
                 expected_exception: test.expect_exception.clone(),
-                got_exception: exec_result.clone().err().map(|e| e.to_string()),
+                got_exception: exec_result1.clone().err().map(|e| e.to_string()),
             };
             print_json_output(Some(kind.to_string()));
             return Err(TestError {
