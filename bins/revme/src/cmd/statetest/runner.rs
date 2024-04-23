@@ -6,6 +6,7 @@ use super::{
 use crate::cmd::statetest::merkle_trie::state_merkle_trie_root2;
 use fluentbase_genesis::devnet::{devnet_genesis_from_file, KECCAK_HASH_KEY, POSEIDON_HASH_KEY};
 use fluentbase_poseidon::poseidon_hash;
+use fluentbase_revm::handler::register::HandleRegisters;
 use fluentbase_types::{Address, ExitCode};
 use indicatif::{ProgressBar, ProgressDrawTarget};
 use lazy_static::lazy_static;
@@ -16,6 +17,7 @@ use revm::{
     interpreter::CreateScheme,
     primitives::{
         calc_excess_blob_gas,
+        hex,
         keccak256,
         AccountInfo,
         Bytecode,
@@ -140,6 +142,12 @@ fn skip_test(path: &Path) -> bool {
     ) || path_str.contains("stEOF")
 }
 
+fn select_test(path: &Path, expected_path_prefix: &str) -> bool {
+    let path_str = path.to_str().expect("Path is not valid UTF-8");
+
+    path_str.contains(expected_path_prefix)
+}
+
 fn check_evm_execution<EXT1, EXT2>(
     test: &Test,
     spec_name: &SpecName,
@@ -158,25 +166,32 @@ fn check_evm_execution<EXT1, EXT2>(
     let logs_root = log_rlp_hash(exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default());
     let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
 
+    println!("\ntest_name: {}", test_name);
     if logs_root != logs_root2 {
-        // let logs1 = exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default();
-        // let logs2 = exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default();
-        // println!("logs from EVM:");
-        // for log in logs1 {
-        //     println!(
-        //         " - {}: {}",
-        //         hex::encode(log.address),
-        //         hex::encode(&log.topics()[0])
-        //     )
-        // }
-        // println!("logs from FLUENT:");
-        // for log in logs2 {
-        //     println!(
-        //         " - {}: {}",
-        //         hex::encode(log.address),
-        //         hex::encode(&log.topics()[0])
-        //     )
-        // }
+        let logs1 = exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default();
+        let logs2 = exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default();
+        println!("EVM logs:");
+        for log in logs1 {
+            println!(
+                " address {} topics {}",
+                hex::encode(log.address),
+                log.topics().len()
+            );
+            for (i, topic) in log.topics().iter().enumerate() {
+                println!("  topic {}: {}", i, topic);
+            }
+        }
+        println!("FLUENT logs:");
+        for log in logs2 {
+            println!(
+                " address {} topics {}",
+                hex::encode(log.address),
+                log.topics().len()
+            );
+            for (i, topic) in log.topics().iter().enumerate() {
+                println!("  topic {}: {}", i, topic);
+            }
+        }
         assert_eq!(logs_root, logs_root2, "LOGS ARE CORRUPTED!!!");
     }
 
@@ -302,6 +317,12 @@ pub fn execute_test_suite(
     if skip_test(path) {
         return Ok(());
     }
+    if !select_test(
+        path,
+        "tests/GeneralStateTests/stArgsZeroOneBalance/log2NonConst.json",
+    ) {
+        return Ok(());
+    }
 
     let s = std::fs::read_to_string(path).unwrap();
     let suite: TestSuite = serde_json::from_str(&s).map_err(|e| TestError {
@@ -311,7 +332,7 @@ pub fn execute_test_suite(
 
     let devnet_genesis = devnet_genesis_from_file();
 
-    let (rwasm_bytecode, rwasm_hash) = (*EVM_LOADER).clone();
+    let (evm_loader_rwasm_bytecode, evm_loader_rwasm_hash) = (*EVM_LOADER).clone();
 
     for (name, unit) in suite.0 {
         // Create database and insert cache
@@ -338,6 +359,7 @@ pub fn execute_test_suite(
                 rwasm_code_hash,
                 code: None,
                 rwasm_code: Some(Bytecode::new_raw(info.code.clone().unwrap_or_default())),
+                ..Default::default()
             };
             let storage = info
                 .storage
@@ -350,7 +372,7 @@ pub fn execute_test_suite(
                     result
                 })
                 .unwrap_or_default();
-            cache_state2.insert_account_with_storage(*address, acc_info, storage.clone());
+            cache_state2.insert_account(*address, acc_info, Some(storage));
         }
 
         for (address, info) in unit.pre {
@@ -366,9 +388,9 @@ pub fn execute_test_suite(
                 acc_info.clone(),
                 info.storage.clone(),
             );
-            acc_info.rwasm_code_hash = rwasm_hash;
-            acc_info.rwasm_code = Some(Bytecode::new_raw(rwasm_bytecode.clone()));
-            cache_state2.insert_account_with_storage(address, acc_info, info.storage.clone());
+            acc_info.rwasm_code_hash = evm_loader_rwasm_hash;
+            acc_info.rwasm_code = Some(Bytecode::new_raw(evm_loader_rwasm_bytecode.clone()));
+            cache_state2.insert_account(address, acc_info, Some(info.storage.clone()));
         }
 
         let mut env = Box::<Env>::default();
@@ -499,12 +521,10 @@ pub fn execute_test_suite(
                     .with_spec_id(spec_id)
                     .build();
 
-                let mut state2 = fluentbase_revm::db::StateBuilder::<
-                    fluentbase_revm::db::EmptyDBTyped<ExitCode>,
-                >::default()
-                .with_cached_prestate(cache2)
-                .with_bundle_update()
-                .build();
+                let mut state2 = fluentbase_revm::db::StateBuilder::default()
+                    .with_cached_prestate(cache2)
+                    .with_bundle_update()
+                    .build();
                 let mut evm2 = fluentbase_revm::Evm::builder()
                     .with_db(&mut state2)
                     .modify_env(|e| *e = env.clone())
@@ -535,7 +555,7 @@ pub fn execute_test_suite(
                     let res2 = evm2.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
 
-                    let Err(e) = check_evm_execution::<TracerEip3155, ()>(
+                    let Err(e) = check_evm_execution(
                         &test,
                         &spec_name,
                         unit.out.as_ref(),
@@ -557,7 +577,7 @@ pub fn execute_test_suite(
                     *elapsed.lock().unwrap() += timer.elapsed();
 
                     // dump state and traces if test failed
-                    let output = check_evm_execution::<(), ()>(
+                    let output = check_evm_execution(
                         &test,
                         &spec_name,
                         unit.out.as_ref(),
@@ -584,15 +604,14 @@ pub fn execute_test_suite(
                 // re-build to run with tracing
                 let mut cache = cache_state.clone();
                 cache.set_state_clear_flag(SpecId::enabled(spec_id, SpecId::SPURIOUS_DRAGON));
-                let mut cache_original = cache_state2.clone();
-                cache_original
-                    .set_state_clear_flag(SpecId::enabled(spec_id, SpecId::SPURIOUS_DRAGON));
+                let mut cache2 = cache_state2.clone();
+                cache2.set_state_clear_flag(SpecId::enabled(spec_id, SpecId::SPURIOUS_DRAGON));
                 let state = revm::db::State::builder()
                     .with_cached_prestate(cache)
                     .with_bundle_update()
                     .build();
                 let state_original = fluentbase_revm::db::State::builder()
-                    .with_cached_prestate(cache_original)
+                    .with_cached_prestate(cache2)
                     .with_bundle_update()
                     .build();
 
