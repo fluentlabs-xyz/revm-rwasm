@@ -308,13 +308,13 @@ impl Interpreter {
         // instruction it will do noop and just stop execution of this contract
         self.instruction_pointer = unsafe { self.instruction_pointer.offset(1) };
 
-        if opcode == 0xf1 {
-            println!(
-                "evm original (gas spent {}): opcode == 0xf1, address: {}",
-                self.gas().spend(),
-                hex::encode(&self.stack.peek(1).unwrap().to_be_bytes::<32>())
-            )
-        }
+        // if opcode == 0xf1 {
+        //     println!(
+        //         "evm original (gas spent {}): opcode == 0xf1, address: {}",
+        //         self.gas().spend(),
+        //         hex::encode(&self.stack.peek(1).unwrap().to_be_bytes::<32>())
+        //     )
+        // }
         // execute instruction.
         (instruction_table[opcode as usize])(self, host)
     }
