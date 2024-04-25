@@ -400,7 +400,7 @@ pub fn execute_test_suite(
                     result
                 })
                 .unwrap_or_default();
-            cache_state2.insert_account(*address, acc_info, Some(storage));
+            cache_state2.insert_account_with_storage(*address, acc_info, storage);
         }
 
         for (address, info) in unit.pre {
@@ -418,7 +418,7 @@ pub fn execute_test_suite(
             );
             acc_info.rwasm_code_hash = evm_loader_rwasm_hash;
             acc_info.rwasm_code = Some(Bytecode::new_raw(evm_loader_rwasm_bytecode.clone()));
-            cache_state2.insert_account(address, acc_info, Some(info.storage.clone()));
+            cache_state2.insert_account_with_storage(address, acc_info, info.storage.clone());
         }
 
         let mut env = Box::<Env>::default();
