@@ -21,3 +21,4 @@ rustc-ice-*
 
 .DS_Store
 /tmp
+/bins/revme/tmp

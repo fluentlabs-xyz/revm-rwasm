@@ -20,6 +20,7 @@ fluentbase-revm = { package = "fluentbase-revm", path = "../../../fluentbase/cra
     "std",
     "serde-json",
     "c-kzg",
+    #    "output_debug",
 ] }
 revm = { package = "revm", path = "../../crates/revm", default-features = false, features = [
     "ethersdb",

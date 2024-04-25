@@ -5,7 +5,6 @@ use bitvec::{
 };
 use core::fmt::Debug;
 use std::{sync::Arc, vec::Vec};
-
 /// A map of valid `jump` destinations.
 #[derive(Clone, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

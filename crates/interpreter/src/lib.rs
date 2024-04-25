@@ -5,6 +5,7 @@
 #![warn(unreachable_pub, unused_crate_dependencies)]
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(unused_imports)]
 
 #[cfg(not(feature = "std"))]
 extern crate alloc as std;
@@ -30,10 +31,18 @@ pub use inner_models::*;
 pub use instruction_result::*;
 pub use instructions::{opcode, Instruction, OpCode, OPCODE_JUMPMAP};
 pub use interpreter::{
-    analysis, next_multiple_of_32, BytecodeLocked, Contract, Interpreter, InterpreterAction,
-    InterpreterResult, SharedMemory, Stack, EMPTY_SHARED_MEMORY, STACK_LIMIT,
+    analysis,
+    next_multiple_of_32,
+    BytecodeLocked,
+    Contract,
+    Interpreter,
+    InterpreterAction,
+    InterpreterResult,
+    SharedMemory,
+    Stack,
+    EMPTY_SHARED_MEMORY,
+    STACK_LIMIT,
 };
 pub use primitives::{MAX_CODE_SIZE, MAX_INITCODE_SIZE};
-
 #[doc(hidden)]
 pub use revm_primitives as primitives;

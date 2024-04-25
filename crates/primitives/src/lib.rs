@@ -5,6 +5,7 @@
 #![warn(unreachable_pub, unused_crate_dependencies)]
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(unused_imports)]
 
 #[cfg(not(feature = "std"))]
 extern crate alloc as std;

@@ -9,6 +9,7 @@ use fluentbase_poseidon::poseidon_hash;
 use fluentbase_revm::handler::register::HandleRegisters;
 use fluentbase_types::{Address, ExitCode};
 use indicatif::{ProgressBar, ProgressDrawTarget};
+use k256::elliptic_curve::consts::False;
 use lazy_static::lazy_static;
 use revm::{
     db::{states::plain_account::PlainStorage, EmptyDB},
@@ -26,6 +27,7 @@ use revm::{
         EVMResultGeneric,
         Env,
         ExecutionResult,
+        InvalidTransaction,
         SpecId,
         TransactTo,
         B256,
@@ -75,17 +77,24 @@ pub enum TestErrorKind {
     },
     #[error("Unknown private key: {0:?}")]
     UnknownPrivateKey(B256),
-    #[error("Unexpected exception (spec_name={spec_name:?}): {got_exception:?} but test expects:{expected_exception:?}")]
+    #[error("Unexpected exception (spec_name={spec_name:?}): got_exception1 '{got_exception1:?}' got_exception2 '{got_exception2:?}' but test expects:{expected_exception:?}")]
     UnexpectedException {
         spec_name: SpecName,
         expected_exception: Option<String>,
-        got_exception: Option<String>,
+        got_exception1: Option<String>,
+        got_exception2: Option<String>,
     },
-    #[error("Unexpected output (spec_name={spec_name:?}): {got_output:?} but test expects:{expected_output:?}")]
+    #[error(
+        "Unexpected output (spec_name={spec_name:?}):\
+     got_output1 '{got_output1:?}'\
+     got_output2 '{got_output2:?}'\
+     but test expects:{expected_output:?}"
+    )]
     UnexpectedOutput {
         spec_name: SpecName,
         expected_output: Option<Bytes>,
-        got_output: Option<Bytes>,
+        got_output1: Option<Bytes>,
+        got_output2: Option<Bytes>,
     },
     #[error(transparent)]
     SerdeDeserialize(#[from] serde_json::Error),
@@ -142,16 +151,22 @@ fn skip_test(path: &Path) -> bool {
     ) || path_str.contains("stEOF")
 }
 
-fn select_test(path: &Path, expected_path_prefix: &str) -> bool {
+fn skip_specific_tests(path: &Path, path_contains: &[&str]) -> bool {
     let path_str = path.to_str().expect("Path is not valid UTF-8");
 
-    path_str.contains(expected_path_prefix)
+    for &v in path_contains {
+        if path_str.contains(v) {
+            return true;
+        };
+    }
+    return false;
 }
 
 fn check_evm_execution<EXT1, EXT2>(
     test: &Test,
     spec_name: &SpecName,
     expected_output: Option<&Bytes>,
+    test_path: &str,
     test_name: &str,
     exec_result1: &Result<ExecutionResult, EVMError<Infallible>>,
     exec_result2: &Result<ExecutionResult, EVMError<ExitCode>>,
@@ -163,14 +178,14 @@ fn check_evm_execution<EXT1, EXT2>(
     >,
     print_json_outcome: bool,
 ) -> Result<(), TestError> {
-    let logs_root = log_rlp_hash(exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default());
+    let logs_root1 = log_rlp_hash(exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default());
     let logs_root2 = log_rlp_hash(exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default());
 
-    println!("\ntest_name: {}", test_name);
-    if logs_root != logs_root2 {
+    if logs_root1 != logs_root2 {
+        println!("\nfailed_test_path: {}", test_path);
         let logs1 = exec_result1.as_ref().map(|r| r.logs()).unwrap_or_default();
         let logs2 = exec_result2.as_ref().map(|r| r.logs()).unwrap_or_default();
-        println!("EVM logs:");
+        println!("EVM logs {}:", logs1.len());
         for log in logs1 {
             println!(
                 " address {} topics {}",
@@ -181,7 +196,7 @@ fn check_evm_execution<EXT1, EXT2>(
                 println!("  topic {}: {}", i, topic);
             }
         }
-        println!("FLUENT logs:");
+        println!("FLUENT logs {}:", logs2.len());
         for log in logs2 {
             println!(
                 " address {} topics {}",
@@ -192,7 +207,7 @@ fn check_evm_execution<EXT1, EXT2>(
                 println!("  topic {}: {}", i, topic);
             }
         }
-        assert_eq!(logs_root, logs_root2, "LOGS ARE CORRUPTED!!!");
+        assert_eq!(logs_root1, logs_root2, "LOGS ARE CORRUPTED!!!");
     }
 
     let state_root = state_merkle_trie_root(evm.context.evm.db.cache.trie_account().into_iter());
@@ -203,13 +218,18 @@ fn check_evm_execution<EXT1, EXT2>(
         if print_json_outcome {
             let json = json!({
                     "stateRoot": state_root,
-                    "logsRoot": logs_root,
-                    "output": exec_result1.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
-                    "gasUsed": exec_result1.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
+                    "logsRoot1": logs_root1,
+                    "logsRoot2": logs_root2,
+                    "output1": exec_result1.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
+                    "output2": exec_result2.as_ref().ok().and_then(|r| r.output().cloned()).unwrap_or_default(),
+                    "gasUsed1": exec_result1.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
+                    "gasUsed2": exec_result2.as_ref().ok().map(|r| r.gas_used()).unwrap_or_default(),
                     "pass": error.is_none(),
                     "errorMsg": error.unwrap_or_default(),
-                    "evmResult": exec_result1.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
-                    "postLogsHash": logs_root,
+                    "evmResult1": exec_result1.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
+                    "evmResult2": exec_result2.as_ref().err().map(|e| e.to_string()).unwrap_or("Ok".to_string()),
+                    "postLogsHash1": logs_root1,
+                    "postLogsHash2": logs_root2,
                     "fork": evm.handler.cfg().spec_id,
                     "test": test_name,
                     "d": test.indexes.data,
@@ -230,17 +250,22 @@ fn check_evm_execution<EXT1, EXT2>(
     // it does not matter.
     // Test where this happens: `tests/GeneralStateTests/stTransactionTest/NoSrcAccountCreate.json`
     // and you can check that we have only two "hash" values for before and after state clear.
-    match (&test.expect_exception, exec_result1) {
+    match (&test.expect_exception, exec_result1, exec_result2) {
         // do nothing
-        (None, Ok(result)) => {
+        (None, Ok(result1), Ok(result2)) => {
             // check output
-            let result_output = result.output();
-            if let Some((expected_output, output)) = expected_output.zip(result_output) {
-                if expected_output != output {
+            let result_output1 = result1.output();
+            let result_output2 = result2.output();
+            if let Some(((expected_output, output1), output2)) =
+                expected_output.zip(result_output1).zip(result_output2)
+            {
+                if expected_output != output1 || expected_output != output2 {
+                    assert_eq!(expected_output, output2);
                     let kind = TestErrorKind::UnexpectedOutput {
                         spec_name: spec_name.clone(),
                         expected_output: Some(expected_output.clone()),
-                        got_output: result.output().cloned(),
+                        got_output1: result1.output().cloned(),
+                        got_output2: result2.output().cloned(),
                     };
                     print_json_output(Some(kind.to_string()));
                     return Err(TestError {
@@ -251,14 +276,16 @@ fn check_evm_execution<EXT1, EXT2>(
             }
         }
         // return okay, exception is expected.
-        (Some(_), Err(_)) => return Ok(()),
+        (Some(_), Err(_), Err(_)) => return Ok(()),
         _ => {
             let kind = TestErrorKind::UnexpectedException {
                 spec_name: spec_name.clone(),
                 expected_exception: test.expect_exception.clone(),
-                got_exception: exec_result1.clone().err().map(|e| e.to_string()),
+                got_exception1: exec_result1.clone().err().map(|e| e.to_string()),
+                got_exception2: exec_result2.clone().err().map(|e| e.to_string()),
             };
             print_json_output(Some(kind.to_string()));
+            assert!(false);
             return Err(TestError {
                 name: test_name.to_string(),
                 kind,
@@ -266,10 +293,10 @@ fn check_evm_execution<EXT1, EXT2>(
         }
     }
 
-    if logs_root != test.logs {
+    if logs_root1 != test.logs {
         let kind = TestErrorKind::LogsRootMismatch {
             spec_name: spec_name.clone(),
-            got: logs_root,
+            got: logs_root1,
             expected: test.logs,
         };
         print_json_output(Some(kind.to_string()));
@@ -309,24 +336,25 @@ lazy_static! {
 }
 
 pub fn execute_test_suite(
-    path: &Path,
+    test_path: &Path,
     elapsed: &Arc<Mutex<Duration>>,
     trace: bool,
     print_json_outcome: bool,
 ) -> Result<(), TestError> {
-    if skip_test(path) {
+    if skip_test(test_path) {
         return Ok(());
     }
-    if !select_test(
-        path,
-        "tests/GeneralStateTests/stArgsZeroOneBalance/log2NonConst.json",
+    if !skip_specific_tests(
+        test_path,
+        &["tests/GeneralStateTests/stSystemOperationsTest/CallRecursiveBombLog2.json"],
     ) {
         return Ok(());
     }
+    println!("test_path: {}", &test_path.to_str().unwrap());
 
-    let s = std::fs::read_to_string(path).unwrap();
+    let s = std::fs::read_to_string(test_path).unwrap();
     let suite: TestSuite = serde_json::from_str(&s).map_err(|e| TestError {
-        name: path.to_string_lossy().into_owned(),
+        name: test_path.to_string_lossy().into_owned(),
         kind: e.into(),
     })?;
 
@@ -334,7 +362,7 @@ pub fn execute_test_suite(
 
     let (evm_loader_rwasm_bytecode, evm_loader_rwasm_hash) = (*EVM_LOADER).clone();
 
-    for (name, unit) in suite.0 {
+    for (test_name, unit) in suite.0 {
         // Create database and insert cache
         let mut cache_state = revm::CacheState::new(false);
         let mut cache_state2 = fluentbase_revm::CacheState::new(false);
@@ -428,7 +456,7 @@ pub fn execute_test_suite(
             address
         } else {
             recover_address(unit.transaction.secret_key.as_slice()).ok_or_else(|| TestError {
-                name: name.clone(),
+                name: test_name.clone(),
                 kind: TestErrorKind::UnknownPrivateKey(unit.transaction.secret_key),
             })?
         };
@@ -555,11 +583,13 @@ pub fn execute_test_suite(
                     let res2 = evm2.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
 
+                    let test_path = test_path.to_str().unwrap();
                     let Err(e) = check_evm_execution(
                         &test,
                         &spec_name,
                         unit.out.as_ref(),
-                        &name,
+                        &test_path,
+                        &test_name,
                         &res,
                         &res2,
                         &evm,
@@ -572,16 +602,19 @@ pub fn execute_test_suite(
                     (e, res)
                 } else {
                     let timer = Instant::now();
+                    let test_path = test_path.to_str().unwrap();
+                    // println!("\nrunning test_path: {}", test_path);
+
                     let res = evm.transact_commit();
                     let res2 = evm2.transact_commit();
                     *elapsed.lock().unwrap() += timer.elapsed();
-
                     // dump state and traces if test failed
                     let output = check_evm_execution(
                         &test,
                         &spec_name,
                         unit.out.as_ref(),
-                        &name,
+                        &test_path,
+                        &test_name,
                         &res,
                         &res2,
                         &evm,
@@ -615,7 +648,7 @@ pub fn execute_test_suite(
                     .with_bundle_update()
                     .build();
 
-                let path = path.display();
+                let path = test_path.display();
                 println!("\nTraces:");
                 let mut evm = Evm::builder()
                     .with_spec_id(spec_id)
@@ -638,7 +671,7 @@ pub fn execute_test_suite(
                 // println!("\nState after: {:#?}", evm.context.evm.db.cache);
                 println!("\nSpecification: {spec_id:?}");
                 println!("\nEnvironment: {env:#?}");
-                println!("\nTest name: {name:?} (index: {index}, path: {path}) failed:\n{e}");
+                println!("\nTest name: {test_name:?} (index: {index}, path: {path}) failed:\n{e}");
 
                 return Err(e);
             }
@@ -661,13 +694,16 @@ pub fn run(
     if print_outcome {
         single_thread = true;
     }
+    let file_index_start: usize = 0;
     let n_files = test_files.len();
 
     let endjob = Arc::new(AtomicBool::new(false));
-    let console_bar = Arc::new(ProgressBar::with_draw_target(
+    let mut console_bar = Arc::new(ProgressBar::with_draw_target(
         Some(n_files as u64),
         ProgressDrawTarget::stdout(),
     ));
+    console_bar.inc(file_index_start as u64);
+    let test_files = test_files[file_index_start..].to_vec();
     let queue = Arc::new(Mutex::new((0usize, test_files)));
     let elapsed = Arc::new(Mutex::new(std::time::Duration::ZERO));
 
