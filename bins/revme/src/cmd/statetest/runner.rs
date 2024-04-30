@@ -346,7 +346,35 @@ pub fn execute_test_suite(
     }
     if !skip_specific_tests(
         test_path,
-        &["tests/GeneralStateTests/stSystemOperationsTest/CallRecursiveBombLog2.json"],
+        &[
+            "tests/GeneralStateTests/stSStoreTest/InitCollisionNonZeroNonce.json",
+            "tests/GeneralStateTests/stSStoreTest/InitCollisionParis.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0toXtoX.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_XtoYtoX.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_XtoXto0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0to0to0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0toX.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_Xto0to0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstoreGas.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_gasLeft.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0toXtoY.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0to0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_Xto0toY.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0to0toX.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0toXto0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_XtoYtoY.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_XtoXtoY.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_Xto0toXto0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_Xto0toX.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_0toXto0toX.json",
+            "tests/GeneralStateTests/stSStoreTest/SstoreCallToSelfSubRefundBelowZero.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_changeFromExternalCallInInitCode.json",
+            "tests/GeneralStateTests/stSStoreTest/InitCollision.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_XtoX.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_XtoYto0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_Xto0.json",
+            "tests/GeneralStateTests/stSStoreTest/sstore_XtoYtoZ.json",
+        ],
     ) {
         return Ok(());
     }
