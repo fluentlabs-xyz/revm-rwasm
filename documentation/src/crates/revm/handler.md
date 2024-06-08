@@ -1,7 +1,7 @@
 # Handler
 
 This is the logic part of the Evm.
-It contains the Specification ID, list of functions that do the logic and list of registers that can change behavior of the Handler when it is build.
+It contains the Specification ID, list of functions that do the logic and list of registers that can change the behavior of the Handler when it is built.
 
 Functions can be grouped in five categories and are marked in that way in the code:
 * Validation functions: [`ValidationHandler`](https://github.com/bluealloy/revm/blob/main/crates/revm/src/handler/handle_types/validation.rs)

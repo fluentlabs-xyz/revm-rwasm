@@ -1,4 +1,4 @@
-# precompile
+# Precompile
 
 This module implements precompiled contracts in the EVM, adding a layer of pre-set functionalities. These are documented in more detail in the next section. The module defines the types and the enum that are used to handle precompiled contracts.
 
