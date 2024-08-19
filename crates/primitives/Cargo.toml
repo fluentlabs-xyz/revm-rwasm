@@ -21,10 +21,14 @@ rust_2018_idioms = "deny"
 [lints.rustdoc]
 all = "warn"
 
+
 [dependencies]
-alloy-primitives = { version = "0.7.2", default-features = false, features = [
+alloy-primitives = {  path = "../../../../alloy-rs-core/crates/primitives-fluent", default-features = false, features = [
     "rlp",
 ] }
+# alloy-primitives = { version = "0.7.2", default-features = false, features = [
+#     "rlp",
+# ] }
 hashbrown = "0.14"
 auto_impl = "1.2"
 bitvec = { version = "1", default-features = false, features = ["alloc"] }
