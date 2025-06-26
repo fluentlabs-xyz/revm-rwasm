@@ -137,7 +137,7 @@ pub(crate) fn execute_rwasm_frame<
     let runtime_context = RefCell::new(runtime_context);
 
     let (fuel_consumed, fuel_refunded, exit_code) = SyscallExec::fn_impl(
-        runtime_context.borrow_mut(),
+        &mut runtime_context.borrow_mut(),
         bytecode_hash,
         &context_input,
         fuel_limit,
@@ -231,9 +231,9 @@ pub(crate) fn execute_rwasm_resume<
     }
     let runtime_context = RefCell::new(runtime_context);
     let (fuel_consumed, fuel_refunded, exit_code) = SyscallResume::fn_impl(
-        runtime_context.borrow_mut(),
+        &mut runtime_context.borrow_mut(),
         inputs.call_id,
-        result.output.into(),
+        result.output.as_ref(),
         exit_code.into_i32(),
         fuel_consumed,
         fuel_refunded,
