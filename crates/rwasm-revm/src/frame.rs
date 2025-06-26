@@ -278,22 +278,21 @@ where
         if inputs.caller == UPDATE_GENESIS_AUTH {
             let bytecode = inputs.input.bytes(context);
 
-            if bytecode.starts_with(UPDATE_GENESIS_PREFIX) {
+            if bytecode.starts_with(&UPDATE_GENESIS_PREFIX) {
                 context.journal().set_code(
                     inputs.target_address,
                     Bytecode::new_raw_checked(bytecode.slice(UPDATE_GENESIS_PREFIX.len()..))
                         .map_err(|err| ERROR::from_string(err.to_string()))?,
                 );
-            } else {
+                return Ok(ItemOrResult::Result(FrameResult::Call(CallOutcome {
+                    result: InterpreterResult {
+                        result: InstructionResult::Return,
+                        output: Default::default(),
+                        gas,
+                    },
+                    memory_offset: inputs.return_memory_offset.clone(),
+                })));
             }
-            return Ok(ItemOrResult::Result(FrameResult::Call(CallOutcome {
-                result: InterpreterResult {
-                    result: InstructionResult::Return,
-                    output: Default::default(),
-                    gas,
-                },
-                memory_offset: inputs.return_memory_offset.clone(),
-            })));
         }
 
         let is_ext_delegate_call = inputs.scheme.is_ext_delegate_call();
