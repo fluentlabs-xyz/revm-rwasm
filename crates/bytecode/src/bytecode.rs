@@ -7,7 +7,12 @@
 
 use crate::{
     eip7702::{Eip7702Bytecode, EIP7702_MAGIC_BYTES},
-    BytecodeDecodeError, Eof, JumpTable, LegacyAnalyzedBytecode, LegacyRawBytecode,
+    metadata::Metadata,
+    BytecodeDecodeError,
+    Eof,
+    JumpTable,
+    LegacyAnalyzedBytecode,
+    LegacyRawBytecode,
     EOF_MAGIC_BYTES,
 };
 use core::fmt::Debug;
@@ -24,6 +29,8 @@ pub enum Bytecode {
     Eof(Arc<Eof>),
     /// EIP-7702 delegated bytecode
     Eip7702(Eip7702Bytecode),
+    /// delegated bytecode metadata
+    Metadata(Metadata),
     /// An Rwasm bytecode
     Rwasm(Bytes),
 }
@@ -144,6 +151,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.bytecode(),
             Self::Eof(eof) => &eof.body.code,
             Self::Eip7702(code) => code.raw(),
+            Self::Metadata(code) => code.metadata(),
             Self::Rwasm(bytes) => bytes,
         }
     }
@@ -169,6 +177,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.bytecode(),
             Self::Eof(eof) => &eof.raw,
             Self::Eip7702(code) => code.raw(),
+            Self::Metadata(code) => code.metadata(),
             Self::Rwasm(bytes) => bytes,
         }
     }
@@ -186,6 +195,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.original_bytes(),
             Self::Eof(eof) => eof.raw().clone(),
             Self::Eip7702(eip7702) => eip7702.raw().clone(),
+            Self::Metadata(metadata) => metadata.metadata().clone(),
             Self::Rwasm(bytes) => bytes.clone(),
         }
     }
@@ -197,6 +207,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.original_byte_slice(),
             Self::Eof(eof) => eof.raw(),
             Self::Eip7702(eip7702) => eip7702.raw(),
+            Self::Metadata(data) => data.metadata(),
             Self::Rwasm(bytes) => bytes,
         }
     }
@@ -213,8 +224,8 @@ impl Bytecode {
         self.len() == 0
     }
 
-    /// Returns an iterator over the opcodes in this bytecode, skipping immediates.
-    /// This is useful if you want to ignore immediates and just see what opcodes are inside.
+    /// Returns an iterator over the opcodes in this bytecode, skipping immediate values.
+    /// This is useful if you want to ignore immediate values and just see what opcodes are inside.
     #[inline]
     pub fn iter_opcodes(&self) -> crate::BytecodeIterator<'_> {
         crate::BytecodeIterator::new(self)

@@ -113,6 +113,12 @@ mod tests {
     use super::*;
 
     #[test]
+    fn magic_bytes_hash_check() {
+        let result = keccak_hash::keccak(&EIP7702_MAGIC_BYTES);
+        assert_eq!(EIP7702_MAGIC_HASH.as_slice(), result.as_bytes());
+    }
+
+    #[test]
     fn sanity_decode() {
         let raw = bytes!("ef01deadbeef");
         assert_eq!(

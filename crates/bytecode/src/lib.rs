@@ -20,6 +20,7 @@ pub mod eof;
 mod iter;
 /// Legacy bytecode.
 pub mod legacy;
+pub mod metadata;
 pub mod opcode;
 pub mod utils;
 
