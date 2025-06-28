@@ -87,6 +87,11 @@ impl Bytecode {
         matches!(self, Self::Eip7702(_))
     }
 
+    /// Returns `true` if bytecode is Metadata.
+    pub const fn is_metadata(&self) -> bool {
+        matches!(self, Self::Metadata(_))
+    }
+
     /// Creates a new legacy [`Bytecode`].
     #[inline]
     pub fn new_legacy(raw: Bytes) -> Self {
