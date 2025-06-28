@@ -469,7 +469,7 @@ where
         // warm load account.
         context.journal().load_account(created_address)?;
 
-        // Create account, transfer funds and make the journal checkpoint.
+        // Create an account, transfer funds and make the journal checkpoint.
         let checkpoint = match context.journal().create_account_checkpoint(
             inputs.caller,
             created_address,

@@ -744,13 +744,43 @@ pub(crate) fn execute_rwasm_interruption<
             // to make sure this account is ownable and owner by the same runtime, that allows
             // a runtime to modify any account it owns
             let ownable_account_bytecode = match account.info.code.as_mut() {
-                Some(Bytecode::OwnableAccount(ownable_account_bytecode))
-                    if ownable_account_bytecode.owner_address == account_owner_address =>
-                {
+                Some(Bytecode::OwnableAccount(ownable_account_bytecode)) => {
+                    // if an account is not the same - it's not a malformed building param, runtime might not know it's account
+                    if ownable_account_bytecode.owner_address != account_owner_address {
+                        if inputs.syscall_params.code_hash == SYSCALL_ID_METADATA_SIZE {
+                            let output = Bytes::from([
+                                // metadata length is 0 in this case
+                                0x00,
+                                0x00,
+                                0x00,
+                                0x00,
+                                // pass info about an account (is_cold, is_empty)
+                                account.is_cold as u8,
+                                account.is_empty() as u8,
+                            ]);
+                            return_result!(output, Return);
+                        } else {
+                            return_result!(Bytes::new(), Revert)
+                        };
+                    }
                     ownable_account_bytecode
                 }
                 _ => {
-                    return_result!(Bytes::new(), MalformedBuiltinParams)
+                    if inputs.syscall_params.code_hash == SYSCALL_ID_METADATA_SIZE {
+                        let output = Bytes::from([
+                            // metadata length is 0 in this case
+                            0x00,
+                            0x00,
+                            0x00,
+                            0x00,
+                            // pass info about an account (is_cold, is_empty)
+                            account.is_cold as u8,
+                            account.is_empty() as u8,
+                        ]);
+                        return_result!(output, Return);
+                    } else {
+                        return_result!(Bytes::new(), MalformedBuiltinParams)
+                    };
                 }
             };
             // execute a syscall
@@ -760,11 +790,18 @@ pub(crate) fn execute_rwasm_interruption<
                         inputs.syscall_params.input.len() == 20,
                         MalformedBuiltinParams
                     );
-                    let mut output = [0u8; size_of::<u32>()];
+                    let mut output = [0u8; 4 + 1 + 1];
                     LittleEndian::write_u32(
                         &mut output,
                         ownable_account_bytecode.metadata.len() as u32,
                     );
+                    #[cfg(feature = "debug-print")]
+                    println!(
+                        "SYSCALL_METADATA_SIZE: address={address} metadata_size={}",
+                        ownable_account_bytecode.metadata.len() as u32
+                    );
+                    output[4] = account.is_cold as u8;
+                    output[5] = account.is_empty() as u8;
                     return_result!(output, Return)
                 }
                 SYSCALL_ID_METADATA_WRITE => {
@@ -775,6 +812,11 @@ pub(crate) fn execute_rwasm_interruption<
                     let offset =
                         LittleEndian::read_u32(&inputs.syscall_params.input[20..24]) as usize;
                     let length = inputs.syscall_params.input[24..].len();
+                    #[cfg(feature = "debug-print")]
+                    println!(
+                        "SYSCALL_METADATA_WRITE: address={address} offset={}, length={}",
+                        offset, length,
+                    );
                     let mut metadata = ownable_account_bytecode.metadata.to_vec();
                     if offset + length > ownable_account_bytecode.metadata.len() {
                         metadata.resize(offset + length, 0);
@@ -794,6 +836,13 @@ pub(crate) fn execute_rwasm_interruption<
                     );
                     let offset = LittleEndian::read_u32(&inputs.syscall_params.input[20..24]);
                     let length = LittleEndian::read_u32(&inputs.syscall_params.input[24..28]);
+                    #[cfg(feature = "debug-print")]
+                    println!(
+                        "SYSCALL_METADATA_COPY: address={address} offset={}, length={}, metadata_length={}",
+                        offset, length, ownable_account_bytecode.metadata.len(),
+                    );
+                    // take min
+                    let length = length.min(ownable_account_bytecode.metadata.len() as u32);
                     let metadata = ownable_account_bytecode
                         .metadata
                         .slice(offset as usize..(offset + length) as usize);
