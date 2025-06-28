@@ -20,7 +20,7 @@ impl<'a> BytecodeIterator<'a> {
             Bytecode::LegacyAnalyzed(_) | Bytecode::Eof(_) | Bytecode::Rwasm(_) => {
                 &bytecode.bytecode()[..]
             }
-            Bytecode::Eip7702(_) | Bytecode::Metadata(_) => &[],
+            Bytecode::Eip7702(_) | Bytecode::OwnableAccount(_) => &[],
         };
         Self {
             start: bytes.as_ptr(),

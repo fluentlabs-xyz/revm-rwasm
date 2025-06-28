@@ -20,8 +20,9 @@ pub mod eof;
 mod iter;
 /// Legacy bytecode.
 pub mod legacy;
-pub mod metadata;
 pub mod opcode;
+/// Metadata account
+pub mod ownable_account;
 pub mod utils;
 
 /// Re-export of bitvec crate, used to store legacy bytecode jump table.

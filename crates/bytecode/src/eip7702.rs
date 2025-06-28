@@ -111,11 +111,12 @@ impl core::error::Error for Eip7702DecodeError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::keccak256;
 
     #[test]
     fn magic_bytes_hash_check() {
-        let result = keccak_hash::keccak(&EIP7702_MAGIC_BYTES);
-        assert_eq!(EIP7702_MAGIC_HASH.as_slice(), result.as_bytes());
+        let result = keccak256(&EIP7702_MAGIC_BYTES);
+        assert_eq!(EIP7702_MAGIC_HASH.as_slice(), result.as_slice());
     }
 
     #[test]

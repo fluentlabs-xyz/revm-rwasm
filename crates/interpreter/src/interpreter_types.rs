@@ -1,7 +1,9 @@
 use crate::{CallInput, Gas, InstructionResult, InterpreterAction};
 use bytecode::eof::CodeInfo;
-use core::cell::Ref;
-use core::ops::{Deref, Range};
+use core::{
+    cell::Ref,
+    ops::{Deref, Range},
+};
 use primitives::{hardfork::SpecId, Address, Bytes, B256, U256};
 
 /// Helper function to read immediates data from the bytecode
@@ -41,7 +43,7 @@ pub trait InputsTr {
     /// Returns call value of the call.
     fn call_value(&self) -> U256;
 
-    fn rwasm_proxy_address(&self) -> Option<Address> {
+    fn account_owner_address(&self) -> Option<Address> {
         None
     }
 }

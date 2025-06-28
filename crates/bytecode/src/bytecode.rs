@@ -7,7 +7,7 @@
 
 use crate::{
     eip7702::{Eip7702Bytecode, EIP7702_MAGIC_BYTES},
-    metadata::{Metadata, METADATA_MAGIC_BYTES},
+    ownable_account::{OwnableAccountBytecode, OWNABLE_ACCOUNT_MAGIC_BYTES},
     BytecodeDecodeError,
     Eof,
     JumpTable,
@@ -30,7 +30,7 @@ pub enum Bytecode {
     /// EIP-7702 delegated bytecode
     Eip7702(Eip7702Bytecode),
     /// delegated bytecode metadata
-    Metadata(Metadata),
+    OwnableAccount(OwnableAccountBytecode),
     /// An Rwasm bytecode
     Rwasm(Bytes),
 }
@@ -89,7 +89,7 @@ impl Bytecode {
 
     /// Returns `true` if bytecode is Metadata.
     pub const fn is_metadata(&self) -> bool {
-        matches!(self, Self::Metadata(_))
+        matches!(self, Self::OwnableAccount(_))
     }
 
     /// Creates a new legacy [`Bytecode`].
@@ -114,10 +114,10 @@ impl Bytecode {
         Self::Eip7702(Eip7702Bytecode::new(address))
     }
 
-    /// Creates a new metadata [`Metadata`] from [`Address`].
+    /// Creates a new metadata [`OwnableAccountBytecode`] from [`Address`].
     #[inline]
-    pub fn new_metadata(address: Address) -> Self {
-        Self::Metadata(Metadata::new(address))
+    pub fn new_metadata(address: Address, metadata: Bytes) -> Self {
+        Self::OwnableAccount(OwnableAccountBytecode::new(address, metadata))
     }
 
     /// Creates a new raw [`Bytecode`].
@@ -135,9 +135,9 @@ impl Bytecode {
                 let eip7702 = Eip7702Bytecode::new_raw(bytes)?;
                 Ok(Self::Eip7702(eip7702))
             }
-            Some(prefix) if prefix == &METADATA_MAGIC_BYTES => {
-                let instance = Metadata::new_raw(bytes)?;
-                Ok(Self::Metadata(instance))
+            Some(prefix) if prefix == &OWNABLE_ACCOUNT_MAGIC_BYTES => {
+                let instance = OwnableAccountBytecode::new_raw(bytes)?;
+                Ok(Self::OwnableAccount(instance))
             }
             Some(prefix) if prefix == &crate::RWASM_MAGIC_BYTES => Ok(Self::Rwasm(bytes)),
             _ => Ok(Self::new_legacy(bytes)),
@@ -166,7 +166,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.bytecode(),
             Self::Eof(eof) => &eof.body.code,
             Self::Eip7702(code) => code.raw(),
-            Self::Metadata(code) => code.metadata(),
+            Self::OwnableAccount(code) => code.metadata(),
             Self::Rwasm(bytes) => bytes,
         }
     }
@@ -192,7 +192,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.bytecode(),
             Self::Eof(eof) => &eof.raw,
             Self::Eip7702(code) => code.raw(),
-            Self::Metadata(code) => code.metadata(),
+            Self::OwnableAccount(code) => code.metadata(),
             Self::Rwasm(bytes) => bytes,
         }
     }
@@ -210,7 +210,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.original_bytes(),
             Self::Eof(eof) => eof.raw().clone(),
             Self::Eip7702(eip7702) => eip7702.raw().clone(),
-            Self::Metadata(metadata) => metadata.metadata().clone(),
+            Self::OwnableAccount(metadata) => metadata.metadata().clone(),
             Self::Rwasm(bytes) => bytes.clone(),
         }
     }
@@ -222,7 +222,7 @@ impl Bytecode {
             Self::LegacyAnalyzed(analyzed) => analyzed.original_byte_slice(),
             Self::Eof(eof) => eof.raw(),
             Self::Eip7702(eip7702) => eip7702.raw(),
-            Self::Metadata(data) => data.metadata(),
+            Self::OwnableAccount(data) => data.metadata(),
             Self::Rwasm(bytes) => bytes,
         }
     }
