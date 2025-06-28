@@ -42,10 +42,8 @@ pub trait InputsTr {
     fn input(&self) -> &CallInput;
     /// Returns call value of the call.
     fn call_value(&self) -> U256;
-
-    fn account_owner_address(&self) -> Option<Address> {
-        None
-    }
+    /// An account owner
+    fn account_owner_address(&self) -> Option<Address>;
 }
 
 /// Trait needed for legacy bytecode.
