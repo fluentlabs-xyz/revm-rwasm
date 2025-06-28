@@ -7,7 +7,7 @@
 
 use crate::{
     eip7702::{Eip7702Bytecode, EIP7702_MAGIC_BYTES},
-    metadata::Metadata,
+    metadata::{Metadata, METADATA_MAGIC_BYTES},
     BytecodeDecodeError,
     Eof,
     JumpTable,
@@ -109,6 +109,12 @@ impl Bytecode {
         Self::Eip7702(Eip7702Bytecode::new(address))
     }
 
+    /// Creates a new metadata [`Metadata`] from [`Address`].
+    #[inline]
+    pub fn new_metadata(address: Address) -> Self {
+        Self::Metadata(Metadata::new(address))
+    }
+
     /// Creates a new raw [`Bytecode`].
     ///
     /// Returns an error on incorrect bytecode format.
@@ -123,6 +129,10 @@ impl Bytecode {
             Some(prefix) if prefix == &EIP7702_MAGIC_BYTES => {
                 let eip7702 = Eip7702Bytecode::new_raw(bytes)?;
                 Ok(Self::Eip7702(eip7702))
+            }
+            Some(prefix) if prefix == &METADATA_MAGIC_BYTES => {
+                let instance = Metadata::new_raw(bytes)?;
+                Ok(Self::Metadata(instance))
             }
             Some(prefix) if prefix == &crate::RWASM_MAGIC_BYTES => Ok(Self::Rwasm(bytes)),
             _ => Ok(Self::new_legacy(bytes)),

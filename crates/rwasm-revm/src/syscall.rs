@@ -32,6 +32,9 @@ use fluentbase_sdk::{
     SYSCALL_ID_DELEGATE_CALL,
     SYSCALL_ID_DESTROY_ACCOUNT,
     SYSCALL_ID_EMIT_LOG,
+    SYSCALL_ID_METADATA_READ,
+    SYSCALL_ID_METADATA_SIZE,
+    SYSCALL_ID_METADATA_WRITE,
     SYSCALL_ID_PREIMAGE_COPY,
     SYSCALL_ID_PREIMAGE_SIZE,
     SYSCALL_ID_SELF_BALANCE,
@@ -723,7 +726,15 @@ pub(crate) fn execute_rwasm_interruption<
             }
             return_result!(account_load.data, Return);
         }
-
+        SYSCALL_ID_METADATA_SIZE => {
+            assert_return!(
+                inputs.syscall_params.input.len() == 20 + 32
+                    && inputs.syscall_params.state == STATE_MAIN,
+                MalformedBuiltinParams
+            );
+        }
+        SYSCALL_ID_METADATA_WRITE => {}
+        SYSCALL_ID_METADATA_READ => {}
         SYSCALL_ID_DELEGATED_STORAGE => {
             assert_return!(
                 inputs.syscall_params.input.len() == 20 + 32

@@ -1,4 +1,4 @@
-use crate::{eip7702::Eip7702DecodeError, eof::EofDecodeError};
+use crate::{eip7702::Eip7702DecodeError, eof::EofDecodeError, metadata::MetadataDecodeError};
 use core::fmt::Debug;
 use std::fmt;
 
@@ -10,6 +10,8 @@ pub enum BytecodeDecodeError {
     Eof(EofDecodeError),
     /// EIP-7702 decode error
     Eip7702(Eip7702DecodeError),
+    /// Metadata decode error
+    Metadata(MetadataDecodeError),
 }
 
 impl From<EofDecodeError> for BytecodeDecodeError {
@@ -24,6 +26,12 @@ impl From<Eip7702DecodeError> for BytecodeDecodeError {
     }
 }
 
+impl From<MetadataDecodeError> for BytecodeDecodeError {
+    fn from(error: MetadataDecodeError) -> Self {
+        Self::Metadata(error)
+    }
+}
+
 impl core::error::Error for BytecodeDecodeError {}
 
 impl fmt::Display for BytecodeDecodeError {
@@ -31,6 +39,7 @@ impl fmt::Display for BytecodeDecodeError {
         match self {
             Self::Eof(e) => fmt::Display::fmt(e, f),
             Self::Eip7702(e) => fmt::Display::fmt(e, f),
+            Self::Metadata(e) => fmt::Display::fmt(e, f),
         }
     }
 }
