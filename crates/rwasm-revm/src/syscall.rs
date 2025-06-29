@@ -786,7 +786,7 @@ pub(crate) fn execute_rwasm_interruption<
         }
         SYSCALL_ID_METADATA_CREATE => {
             assert_return!(
-                inputs.syscall_params.input.len() == 32
+                inputs.syscall_params.input.len() >= 32
                     && inputs.syscall_params.state == STATE_MAIN,
                 MalformedBuiltinParams
             );
@@ -802,6 +802,11 @@ pub(crate) fn execute_rwasm_interruption<
             let Ok(account) = journal.load_account_code(derived_metadata_address) else {
                 return_result!(FatalExternalError);
             };
+            #[cfg(feature = "debug-print")]
+            println!(
+                "SYSCALL_METADATA_CREATE: address={derived_metadata_address} salt={salt} length={}",
+                metadata.len(),
+            );
             // make sure there is no account create collision
             if !account.is_empty() {
                 return_result!(CreateCollision);
