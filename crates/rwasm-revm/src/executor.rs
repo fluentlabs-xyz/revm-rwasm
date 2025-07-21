@@ -9,9 +9,20 @@ use fluentbase_runtime::{
     RuntimeContext,
 };
 use fluentbase_sdk::{
-    codec::CompactABI, BlockContextV1, BytecodeOrHash, Bytes, ContractContextV1, ExitCode,
-    SharedContextInput, SharedContextInputV1, SyscallInvocationParams, TxContextV1,
-    FUEL_DENOM_RATE, STATE_DEPLOY, STATE_MAIN, U256,
+    codec::CompactABI,
+    BlockContextV1,
+    BytecodeOrHash,
+    Bytes,
+    ContractContextV1,
+    ExitCode,
+    SharedContextInput,
+    SharedContextInputV1,
+    SyscallInvocationParams,
+    TxContextV1,
+    FUEL_DENOM_RATE,
+    STATE_DEPLOY,
+    STATE_MAIN,
+    U256,
 };
 use revm::{
     bytecode::Bytecode,
@@ -20,7 +31,13 @@ use revm::{
     interpreter::{
         interpreter::EthInterpreter,
         interpreter_types::{InputsTr, LoopControl, RuntimeFlag},
-        return_ok, return_revert, CallInput, FrameInput, Gas, InstructionResult, InterpreterAction,
+        return_ok,
+        return_revert,
+        CallInput,
+        FrameInput,
+        Gas,
+        InstructionResult,
+        InterpreterAction,
         InterpreterResult,
     },
 };
@@ -32,6 +49,8 @@ pub(crate) fn execute_rwasm_frame<
     frame: &mut RwasmFrame<EVM, ERROR, EthInterpreter>,
     evm: &mut EVM,
 ) -> Result<InterpreterAction, ERROR> {
+    println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/executor.rs execute_rwasm_frame");
+
     let interpreter = &mut frame.interpreter;
     let is_create: bool = matches!(frame.input, FrameInput::Create(..));
     let is_static: bool = interpreter.runtime_flag.is_static();
@@ -396,6 +415,8 @@ pub(crate) fn run_rwasm_loop<
     frame: &mut RwasmFrame<EVM, ERROR, EthInterpreter>,
     evm: &mut EVM,
 ) -> Result<InterpreterAction, ERROR> {
+    println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/executor.rs run_rwasm_loop");
+
     loop {
         let next_action = if let Some(interrupted_outcome) = frame.take_interrupted_outcome() {
             execute_rwasm_resume(frame, evm, interrupted_outcome)

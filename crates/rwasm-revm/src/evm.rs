@@ -33,6 +33,7 @@ impl<CTX: ContextTr, INSP>
 impl<CTX, INSP, I, P> RwasmEvm<CTX, INSP, I, P> {
     /// Consumed self and returns a new Evm type with given Inspector.
     pub fn with_inspector<OINSP>(self, inspector: OINSP) -> RwasmEvm<CTX, OINSP, I, P> {
+        println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/evm.rs with_inspector");
         RwasmEvm(self.0.with_inspector(inspector))
     }
 
@@ -43,6 +44,8 @@ impl<CTX, INSP, I, P> RwasmEvm<CTX, INSP, I, P> {
 
     /// Consumes self and returns the inner Inspector.
     pub fn into_inspector(self) -> INSP {
+        println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/evm.rs into_inspector");
+
         self.0.into_inspector()
     }
 }
@@ -60,10 +63,14 @@ where
     type Inspector = INSP;
 
     fn inspector(&mut self) -> &mut Self::Inspector {
+        println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/evm.rs inspector");
+
         &mut self.0.inspector
     }
 
     fn ctx_inspector(&mut self) -> (&mut Self::Context, &mut Self::Inspector) {
+        println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/evm.rs ctx_inspector");
+
         (&mut self.0.ctx, &mut self.0.inspector)
     }
 
@@ -74,6 +81,7 @@ where
         >,
     ) -> <<Self::Instructions as InstructionProvider>::InterpreterTypes as InterpreterTypes>::Output
     {
+        println!("DEBUG: fluentbase/rwasm_revm/evm run_inspect_interpreter()");
         self.0.run_inspect_interpreter(interpreter)
     }
 }

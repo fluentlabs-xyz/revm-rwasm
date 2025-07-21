@@ -1,16 +1,31 @@
 use crate::{
     handler::inspect_instructions,
     inspect::{InspectCommitEvm, InspectEvm},
-    Inspector, InspectorEvmTr, InspectorFrame, InspectorHandler, JournalExt,
+    Inspector,
+    InspectorEvmTr,
+    InspectorFrame,
+    InspectorHandler,
+    JournalExt,
 };
 use context::{ContextSetters, ContextTr, Evm, JournalOutput, JournalTr};
 use database_interface::DatabaseCommit;
 use handler::{
-    instructions::InstructionProvider, EthFrame, EvmTr, EvmTrError, Frame, FrameResult, Handler,
-    MainnetHandler, PrecompileProvider,
+    instructions::InstructionProvider,
+    EthFrame,
+    EvmTr,
+    EvmTrError,
+    Frame,
+    FrameResult,
+    Handler,
+    MainnetHandler,
+    PrecompileProvider,
 };
 use interpreter::{
-    interpreter::EthInterpreter, FrameInput, Interpreter, InterpreterAction, InterpreterResult,
+    interpreter::EthInterpreter,
+    FrameInput,
+    Interpreter,
+    InterpreterAction,
+    InterpreterResult,
     InterpreterTypes,
 };
 
@@ -96,6 +111,8 @@ where
         >,
     ) -> <<Self::Instructions as InstructionProvider>::InterpreterTypes as InterpreterTypes>::Output
     {
+        println!("DEBUG: fluentbase/revm/inspector run_inspect_interpreter()");
+
         let context = &mut self.ctx;
         let instructions = &mut self.instruction;
         let inspector = &mut self.inspector;

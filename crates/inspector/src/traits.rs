@@ -1,10 +1,19 @@
 use context::{result::FromStringError, ContextTr};
 use handler::{
-    instructions::InstructionProvider, ContextTrDbError, EthFrame, EvmTr, Frame, FrameInitOrResult,
+    instructions::InstructionProvider,
+    ContextTrDbError,
+    EthFrame,
+    EvmTr,
+    Frame,
+    FrameInitOrResult,
     PrecompileProvider,
 };
 use interpreter::{
-    interpreter::EthInterpreter, FrameInput, Interpreter, InterpreterResult, InterpreterTypes,
+    interpreter::EthInterpreter,
+    FrameInput,
+    Interpreter,
+    InterpreterResult,
+    InterpreterTypes,
 };
 
 /// Inspector EVM trait. Extends the [`EvmTr`] trait with inspector related methods.
@@ -69,6 +78,7 @@ where
     type IT = EthInterpreter;
 
     fn run_inspect(&mut self, evm: &mut Self::Evm) -> Result<FrameInitOrResult<Self>, Self::Error> {
+        println!("DEBUG: fluentbase/revm/inspector run_inspect()");
         let interpreter = self.interpreter();
         let next_action = evm.run_inspect_interpreter(interpreter);
         self.process_next_action(evm, next_action)

@@ -76,7 +76,7 @@ use revm::{
 use rwasm::RwasmModule;
 use std::{boxed::Box, sync::Arc};
 
-pub(crate) struct RwasmFrame<EVM, ERROR, IW: InterpreterTypes> {
+pub struct RwasmFrame<EVM, ERROR, IW: InterpreterTypes> {
     phantom: PhantomData<(EVM, ERROR)>,
     /// Data of the frame.
     data: FrameData,
@@ -129,6 +129,8 @@ where
     }
 
     fn run(&mut self, context: &mut Self::Evm) -> Result<FrameInitOrResult<Self>, Self::Error> {
+        println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/frame.rs run");
+
         let next_action = run_rwasm_loop(self, context)?;
         self.process_next_action(context, next_action)
     }
@@ -138,17 +140,19 @@ where
         context: &mut Self::Evm,
         result: Self::FrameResult,
     ) -> Result<(), Self::Error> {
+        println!("DEBUG: fluentbase:revm/crates/rwasm-revm/src/frame.rs return_result");
+
         self.return_result(context, result)
     }
 }
 
-pub(crate) type ContextTrDbError<CTX> = <<CTX as ContextTr>::Db as Database>::Error;
+pub type ContextTrDbError<CTX> = <<CTX as ContextTr>::Db as Database>::Error;
 
 impl<CTX, ERROR, IW> RwasmFrame<CTX, ERROR, IW>
 where
     IW: InterpreterTypes,
 {
-    pub(crate) fn new(
+    pub fn new(
         data: FrameData,
         input: FrameInput,
         depth: usize,
@@ -166,14 +170,11 @@ where
         }
     }
 
-    pub(crate) fn insert_interrupted_outcome(
-        &mut self,
-        interrupted_outcome: SystemInterruptionOutcome,
-    ) {
+    pub fn insert_interrupted_outcome(&mut self, interrupted_outcome: SystemInterruptionOutcome) {
         self.interrupted_outcome = Some(interrupted_outcome);
     }
 
-    pub(crate) fn insert_interrupted_result(&mut self, result: FrameResult) {
+    pub fn insert_interrupted_result(&mut self, result: FrameResult) {
         let created_address = if let FrameResult::Create(create_outcome) = &result {
             create_outcome.address.or_else(|| {
                 // I don't know why EVM returns empty address and ok status in case of nonce
@@ -195,11 +196,11 @@ where
             .insert_result(result.into_interpreter_result(), created_address);
     }
 
-    pub(crate) fn is_interrupted_call(&self) -> bool {
+    pub fn is_interrupted_call(&self) -> bool {
         self.interrupted_outcome.is_some()
     }
 
-    pub(crate) fn take_interrupted_outcome(&mut self) -> Option<SystemInterruptionOutcome> {
+    pub fn take_interrupted_outcome(&mut self) -> Option<SystemInterruptionOutcome> {
         self.interrupted_outcome.take()
     }
 }
@@ -216,7 +217,7 @@ where
 {
     /// Make call frame
     #[inline]
-    pub(crate) fn make_call_frame(
+    pub fn make_call_frame(
         evm: &mut EVM,
         depth: usize,
         memory: SharedMemory,
@@ -403,7 +404,7 @@ where
 
     /// Make create frame.
     #[inline]
-    pub(crate) fn make_create_frame(
+    pub fn make_create_frame(
         evm: &mut EVM,
         depth: usize,
         memory: SharedMemory,
@@ -548,7 +549,7 @@ where
 
     /// Make create frame.
     #[inline]
-    pub(crate) fn make_eofcreate_frame(
+    pub fn make_eofcreate_frame(
         evm: &mut EVM,
         depth: usize,
         memory: SharedMemory,
@@ -663,7 +664,7 @@ where
         )))
     }
 
-    pub(crate) fn init_with_context(
+    pub fn init_with_context(
         evm: &mut EVM,
         depth: usize,
         frame_init: FrameInput,
@@ -689,7 +690,7 @@ where
     >,
     ERROR: From<revm::handler::ContextTrDbError<EVM::Context>> + FromStringError,
 {
-    pub(crate) fn process_next_action(
+    pub fn process_next_action(
         &mut self,
         evm: &mut EVM,
         next_action: InterpreterAction,
@@ -957,6 +958,7 @@ where
     type IT = EthInterpreter;
 
     fn run_inspect(&mut self, evm: &mut Self::Evm) -> Result<FrameInitOrResult<Self>, Self::Error> {
+        println!("DEBUG:: rwasm-revm/frame run_inspect");
         let interpreter = self.interpreter();
         let next_action = evm.run_inspect_interpreter(interpreter);
         self.process_next_action(evm, next_action)

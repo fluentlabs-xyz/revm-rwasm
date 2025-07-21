@@ -3,11 +3,15 @@ use context::{result::ResultAndState, ContextTr, JournalEntry, Transaction};
 use handler::{EvmTr, Frame, FrameInitOrResult, FrameOrResult, FrameResult, Handler, ItemOrResult};
 use interpreter::{
     instructions::InstructionTable,
-    interpreter_types::{Jumps, LoopControl},
-    FrameInput, Host, InitialAndFloorGas, InstructionResult, Interpreter, InterpreterAction,
+    interpreter_types::{InputsTr, Jumps, LegacyBytecode, LoopControl},
+    FrameInput,
+    Host,
+    InitialAndFloorGas,
+    InstructionResult,
+    Interpreter,
+    InterpreterAction,
     InterpreterTypes,
 };
-
 use std::{vec, vec::Vec};
 
 /// Trait that extends [`Handler`] with inspection functionality.
@@ -128,6 +132,8 @@ where
         frame: &mut Self::Frame,
         evm: &mut Self::Evm,
     ) -> Result<FrameInitOrResult<Self::Frame>, Self::Error> {
+        println!("DEBUG: fluentbase:revm/inspector/inspect_frame_call");
+
         frame.run_inspect(evm)
     }
 
@@ -145,6 +151,8 @@ where
         evm: &mut Self::Evm,
         frame: Self::Frame,
     ) -> Result<FrameResult, Self::Error> {
+        println!("DEBUG: fluentbase:revm/inspector/handler");
+        println!("frame: {:?}", frame.frame_input());
         let mut frame_stack: Vec<Self::Frame> = vec![frame];
         loop {
             let frame = frame_stack.last_mut().unwrap();
@@ -152,6 +160,7 @@ where
 
             let result = match call_or_result {
                 ItemOrResult::Item(mut init) => {
+                    println!("match ItemOrResult::Item(mut init) ");
                     let (context, inspector) = evm.ctx_inspector();
                     if let Some(mut output) = frame_start(context, inspector, &mut init) {
                         frame_end(context, inspector, &init, &mut output);
@@ -175,6 +184,9 @@ where
                     }
                 }
                 ItemOrResult::Result(mut result) => {
+                    println!("match ItemOrResult::Result(mut result)");
+
+                    println!("result: {:?}", result);
                     let (context, inspector) = evm.ctx_inspector();
                     frame_end(context, inspector, frame.frame_input(), &mut result);
 
@@ -261,13 +273,28 @@ where
     CTX: ContextTr<Journal: JournalExt> + Host,
     IT: InterpreterTypes,
 {
+    println!("fluentbase/revm/inspector inspect_instructions()");
     interpreter.reset_control();
 
     let mut log_num = context.journal().logs().len();
+
+    let bytecode_len = interpreter.bytecode.bytecode_len();
+    println!("log_num: {:?}", log_num);
+    println!("bytecode_len: {:?}", bytecode_len);
+    let input = interpreter.input.input().bytes(context);
+    // println!("input: {:?}", input);
+    let bytecode_slice = interpreter.bytecode.bytecode_slice();
+    let hex = bytecode_slice
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect::<String>();
+    // println!("0x{}", hex);
+
     // Main loop
     while interpreter.control.instruction_result().is_continue() {
         // Get current opcode.
         let opcode = interpreter.bytecode.opcode();
+        println!("opcode: {:?}", opcode);
 
         // Call Inspector step.
         inspector.step(interpreter, context);
