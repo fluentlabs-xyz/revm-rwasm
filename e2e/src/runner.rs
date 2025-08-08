@@ -614,15 +614,15 @@ pub fn execute_test_suite(
         block_env.prevrandao = unit.env.current_random;
         // EIP-4844
         if let Some(current_excess_blob_gas) = unit.env.current_excess_blob_gas {
-            block_env.set_blob_excess_gas_and_price(current_excess_blob_gas.to(), true);
+            // block_env.set_blob_excess_gas_and_price(current_excess_blob_gas.to(), true);
         } else if let (Some(parent_blob_gas_used), Some(parent_excess_blob_gas)) = (
             unit.env.parent_blob_gas_used,
             unit.env.parent_excess_blob_gas,
         ) {
-            block_env.set_blob_excess_gas_and_price(
-                calc_excess_blob_gas(parent_blob_gas_used.to(), parent_excess_blob_gas.to(), 0),
-                true,
-            );
+            // block_env.set_blob_excess_gas_and_price(
+            //     calc_excess_blob_gas(parent_blob_gas_used.to(), parent_excess_blob_gas.to(), 0),
+            //     true,
+            // );
         }
 
         // tx env
