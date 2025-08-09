@@ -117,8 +117,19 @@ macro_rules! resize_memory {
 #[macro_export]
 macro_rules! popn {
     ([ $($x:ident),* ],$interpreterreter:expr $(,$ret:expr)? ) => {
-        let Some([$( $x ),*]) = $interpreterreter.stack.popn() else {
+        let Some([$( $x ),*]) = $crate::interpreter_types::StackTr::popn(&mut $interpreterreter.stack) else {
             $interpreterreter.halt($crate::InstructionResult::StackUnderflow);
+            return $($ret)?;
+        };
+    };
+}
+
+/// Peek n records into a static array
+#[macro_export]
+macro_rules! peekn {
+    ([ $($x:ident),* ],$interpreter:expr $(,$ret:expr)? ) => {
+        let Some([$( $x ),*]) = $interpreter.stack.peekn() else {
+            $interpreter.halt($crate::InstructionResult::StackUnderflow);
             return $($ret)?;
         };
     };

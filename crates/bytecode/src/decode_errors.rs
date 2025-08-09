@@ -1,4 +1,4 @@
-use crate::eip7702::Eip7702DecodeError;
+use crate::{eip7702::Eip7702DecodeError, ownable_account::OwnableAccountDecodeError};
 use core::fmt::Debug;
 use std::fmt;
 
@@ -8,11 +8,19 @@ use std::fmt;
 pub enum BytecodeDecodeError {
     /// EIP-7702 decode error
     Eip7702(Eip7702DecodeError),
+    /// Metadata decode error
+    OwnableAccount(OwnableAccountDecodeError),
 }
 
 impl From<Eip7702DecodeError> for BytecodeDecodeError {
     fn from(error: Eip7702DecodeError) -> Self {
         Self::Eip7702(error)
+    }
+}
+
+impl From<OwnableAccountDecodeError> for BytecodeDecodeError {
+    fn from(error: OwnableAccountDecodeError) -> Self {
+        Self::OwnableAccount(error)
     }
 }
 
@@ -22,6 +30,7 @@ impl fmt::Display for BytecodeDecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Eip7702(e) => fmt::Display::fmt(e, f),
+            Self::OwnableAccount(e) => fmt::Display::fmt(e, f),
         }
     }
 }

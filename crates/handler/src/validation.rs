@@ -4,8 +4,9 @@ use context_interface::{
     Block, Cfg, ContextTr,
 };
 use core::cmp;
-use interpreter::gas::{self, InitialAndFloorGas};
-use primitives::{eip4844, hardfork::SpecId, B256};
+use interpreter::gas::{self, InitialAndFloorGas, FUEL_DENOM_RATE};
+use primitives::wasm::WASM_MAGIC_BYTES;
+use primitives::{eip4844, hardfork::SpecId, wasm::wasm_max_code_size, B256};
 
 /// Validates the execution environment including block and transaction parameters.
 pub fn validate_env<CTX: ContextTr, ERROR: From<InvalidHeader> + From<InvalidTransaction>>(
@@ -232,12 +233,13 @@ pub fn validate_tx_env<CTX: ContextTr, Error>(
         return Err(InvalidTransaction::CallerGasLimitMoreThanBlock);
     }
 
-    // EIP-3860: Limit and meter initcode. Still valid with EIP-7907 and increase of initcode size.
-    if spec_id.is_enabled_in(SpecId::SHANGHAI)
-        && tx.kind().is_create()
-        && context.tx().input().len() > context.cfg().max_initcode_size()
-    {
-        return Err(InvalidTransaction::CreateInitCodeSizeLimit);
+    // EIP-3860: Limit and meter initcode
+    if spec_id.is_enabled_in(SpecId::SHANGHAI) && tx.kind().is_create() {
+        let max_initcode_size = wasm_max_code_size(tx.input())
+            .unwrap_or_else(|| context.cfg().max_code_size().saturating_mul(2));
+        if context.tx().input().len() > max_initcode_size {
+            return Err(InvalidTransaction::CreateInitCodeSizeLimit);
+        }
     }
 
     Ok(())
@@ -296,11 +298,17 @@ pub fn validate_initial_tx_gas(
         });
     }
 
+    let mut floor_gas = gas.floor_gas;
+    if tx.input().starts_with(&WASM_MAGIC_BYTES) {
+        floor_gas /= FUEL_DENOM_RATE;
+    }
+
     // EIP-7623: Increase calldata cost
     // floor gas should be less than gas limit.
-    if spec.is_enabled_in(SpecId::PRAGUE) && gas.floor_gas > tx.gas_limit() {
+    if spec.is_enabled_in(SpecId::PRAGUE) && floor_gas > tx.gas_limit() {
+        // coming from large calldata.
         return Err(InvalidTransaction::GasFloorMoreThanGasLimit {
-            gas_floor: gas.floor_gas,
+            gas_floor: floor_gas,
             gas_limit: tx.gas_limit(),
         });
     };

@@ -24,6 +24,7 @@ pub const PRECOMPILE: PrecompileWithAddress = PrecompileWithAddress(PAIRING_ADDR
 /// target field and 0x00 otherwise.
 ///
 /// See also: <https://eips.ethereum.org/EIPS/eip-2537#abi-for-pairing>
+#[allow(clippy::manual_is_multiple_of)]
 pub fn pairing(input: &[u8], gas_limit: u64) -> PrecompileResult {
     let input_len = input.len();
     if input_len == 0 || input_len % PAIRING_INPUT_LENGTH != 0 {

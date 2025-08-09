@@ -1,21 +1,20 @@
-use crate::evm::FrameTr;
-use crate::item_or_result::FrameInitOrResult;
-use crate::{precompile_provider::PrecompileProvider, ItemOrResult};
-use crate::{CallFrame, CreateFrame, FrameData, FrameResult};
-use context::result::FromStringError;
-use context_interface::context::ContextError;
-use context_interface::local::{FrameToken, OutFrame};
-use context_interface::ContextTr;
-use context_interface::{
-    journaled_state::{JournalCheckpoint, JournalTr},
-    Cfg, Database,
+use crate::{
+    evm::FrameTr, item_or_result::FrameInitOrResult, precompile_provider::PrecompileProvider,
+    CallFrame, CreateFrame, FrameData, FrameResult, ItemOrResult,
 };
-use core::cmp::min;
+use context::result::FromStringError;
+use context_interface::{
+    context::ContextError,
+    journaled_state::{JournalCheckpoint, JournalTr},
+    local::{FrameToken, OutFrame},
+    Cfg, ContextTr, Database,
+};
+use core::{cmp::min, fmt::Debug};
 use derive_where::derive_where;
-use interpreter::interpreter_action::FrameInit;
 use interpreter::{
     gas,
     interpreter::{EthInterpreter, ExtBytecode},
+    interpreter_action::FrameInit,
     interpreter_types::ReturnData,
     CallInput, CallInputs, CallOutcome, CallValue, CreateInputs, CreateOutcome, CreateScheme,
     FrameInput, Gas, InputsImpl, InstructionResult, Interpreter, InterpreterAction,
@@ -24,11 +23,10 @@ use interpreter::{
 use primitives::{
     constants::CALL_STACK_LIMIT,
     hardfork::SpecId::{self, HOMESTEAD, LONDON, SPURIOUS_DRAGON},
+    keccak256, Address, Bytes, B256, U256,
 };
-use primitives::{keccak256, Address, Bytes, B256, U256};
 use state::Bytecode;
-use std::borrow::ToOwned;
-use std::boxed::Box;
+use std::{borrow::ToOwned, boxed::Box};
 
 /// Frame implementation for Ethereum.
 #[derive_where(Clone, Debug; IW,
@@ -40,7 +38,7 @@ use std::boxed::Box;
     <IW as InterpreterTypes>::RuntimeFlag,
     <IW as InterpreterTypes>::Extend,
 )]
-pub struct EthFrame<IW: InterpreterTypes = EthInterpreter> {
+pub struct EthFrame<IW: InterpreterTypes = EthInterpreter, EXT: Clone + Debug = ()> {
     /// Frame-specific data (Call, Create, or EOFCreate).
     pub data: FrameData,
     /// Input data for the frame.
@@ -54,20 +52,22 @@ pub struct EthFrame<IW: InterpreterTypes = EthInterpreter> {
     /// Whether the frame has been finished its execution.
     /// Frame is considered finished if it has been called and returned a result.
     pub is_finished: bool,
+    /// Info about interrupted call (for rwasm execution)
+    pub interrupted_outcome: Option<EXT>,
 }
 
-impl<IT: InterpreterTypes> FrameTr for EthFrame<IT> {
+impl<IT: InterpreterTypes, EXT: Clone + Debug> FrameTr for EthFrame<IT, EXT> {
     type FrameResult = FrameResult;
     type FrameInit = FrameInit;
 }
 
-impl Default for EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> Default for EthFrame<EthInterpreter, EXT> {
     fn default() -> Self {
         Self::do_default(Interpreter::default())
     }
 }
 
-impl EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
     fn invalid() -> Self {
         Self::do_default(Interpreter::invalid())
     }
@@ -82,7 +82,23 @@ impl EthFrame<EthInterpreter> {
             checkpoint: JournalCheckpoint::default(),
             interpreter,
             is_finished: false,
+            interrupted_outcome: None,
         }
+    }
+
+    /// Insert an interrupted outcome into the frame
+    pub fn insert_interrupted_outcome(&mut self, interrupted_outcome: EXT) {
+        self.interrupted_outcome = Some(interrupted_outcome);
+    }
+
+    /// Check is call interrupted
+    pub fn is_interrupted_call(&self) -> bool {
+        self.interrupted_outcome.is_some()
+    }
+
+    /// Take an interruption outcome
+    pub fn take_interrupted_outcome(&mut self) -> Option<EXT> {
+        self.interrupted_outcome.take()
     }
 
     /// Returns true if the frame has finished execution.
@@ -99,7 +115,7 @@ impl EthFrame<EthInterpreter> {
 /// Type alias for database errors from a context.
 pub type ContextTrDbError<CTX> = <<CTX as ContextTr>::Db as Database>::Error;
 
-impl EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
     /// Clear and initialize a frame.
     #[allow(clippy::too_many_arguments)]
     pub fn clear(
@@ -122,6 +138,7 @@ impl EthFrame<EthInterpreter> {
             interpreter,
             checkpoint: checkpoint_ref,
             is_finished: is_finished_ref,
+            ..
         } = self;
         *data_ref = data;
         *input_ref = input;
@@ -183,12 +200,13 @@ impl EthFrame<EthInterpreter> {
             }
         }
 
-        let interpreter_input = InputsImpl {
+        let mut interpreter_input = InputsImpl {
             target_address: inputs.target_address,
             caller_address: inputs.caller,
             bytecode_address: Some(inputs.bytecode_address),
             input: inputs.input.clone(),
             call_value: inputs.value.get(),
+            account_owner: None,
         };
         let is_static = inputs.is_static;
         let gas_limit = inputs.gas_limit;
@@ -228,6 +246,15 @@ impl EthFrame<EthInterpreter> {
                 .info;
             bytecode = account.code.clone().unwrap_or_default();
             code_hash = account.code_hash();
+        } else if let Bytecode::OwnableAccount(ownable_account_bytecode) = bytecode {
+            let account = &ctx
+                .journal_mut()
+                .load_account_code(ownable_account_bytecode.owner_address)?
+                .info;
+            bytecode = account.code.clone().unwrap_or_default();
+            code_hash = account.code_hash();
+            // account owner is an execution runtime (like EVM/SVM/ERC20)
+            interpreter_input.account_owner = Some(ownable_account_bytecode.owner_address);
         }
 
         // Returns success if bytecode is empty.
@@ -343,6 +370,7 @@ impl EthFrame<EthInterpreter> {
             bytecode_address: None,
             input: CallInput::Bytes(Bytes::new()),
             call_value: inputs.value,
+            account_owner: None,
         };
         let gas_limit = inputs.gas_limit;
 
@@ -461,6 +489,7 @@ impl EthFrame<EthInterpreter> {
             bytecode_address: None,
             input,
             call_value: inputs.value,
+            account_owner: None,
         };
 
         let gas_limit = inputs.gas_limit;
@@ -511,7 +540,7 @@ impl EthFrame<EthInterpreter> {
     }
 }
 
-impl EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
     /// Processes the next interpreter action, either creating a new frame or returning a result.
     pub fn process_next_action<
         CTX: ContextTr,
@@ -535,6 +564,7 @@ impl EthFrame<EthInterpreter> {
                 }));
             }
             InterpreterAction::Return(result) => result,
+            InterpreterAction::SystemInterruption { .. } => unreachable!(),
         };
 
         // Handle return from frame
@@ -719,11 +749,11 @@ pub fn return_create<JOURNAL: JournalTr>(
     // If we have enough gas we can commit changes.
     journal.checkpoint_commit();
 
-    // Do analysis of bytecode straight away.
-    let bytecode = Bytecode::new_legacy(interpreter_result.output.clone());
-
-    // Set code
-    journal.set_code(address, bytecode);
+    // set code only if an output result is not empty
+    if !interpreter_result.output.is_empty() {
+        let bytecode = Bytecode::new_legacy(interpreter_result.output.clone());
+        journal.set_code(address, bytecode);
+    }
 
     interpreter_result.result = InstructionResult::Return;
 }

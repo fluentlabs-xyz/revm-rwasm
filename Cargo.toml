@@ -2,7 +2,6 @@
 members = [
     # binary
     "bins/revme",
-
     # libraries
     "crates/revm",
     "crates/primitives",
@@ -15,14 +14,11 @@ members = [
     "crates/context",
     "crates/context/interface",
     "crates/handler",
-
     # variants
     "crates/op-revm",
     "crates/inspector",
-
     # utility
     "crates/statetest-types",
-
     # examples
     "examples/block_traces",
     "examples/cheatcode_inspector",

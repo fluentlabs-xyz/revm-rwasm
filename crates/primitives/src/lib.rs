@@ -17,16 +17,22 @@ pub mod eip7825;
 pub mod eip7907;
 pub mod eip7918;
 pub mod hardfork;
+#[cfg(target_arch = "wasm32")]
+mod keccak256;
+/// An additional module for Wasm-related constants
+pub mod wasm;
 
-pub use constants::*;
-
+#[cfg(not(target_arch = "wasm32"))]
+pub use alloy_primitives::keccak256;
 // Reexport alloy primitives.
-
 pub use alloy_primitives::map::{self, hash_map, hash_set, HashMap, HashSet};
 pub use alloy_primitives::{
-    self, address, b256, bytes, fixed_bytes, hex, hex_literal, keccak256, ruint, uint, Address,
-    Bytes, FixedBytes, Log, LogData, TxKind, B256, I128, I256, U128, U256,
+    self, address, b256, bytes, fixed_bytes, hex, hex_literal, ruint, uint, Address, Bytes,
+    FixedBytes, Log, LogData, TxKind, B256, I128, I256, U128, U256,
 };
+pub use constants::*;
+#[cfg(target_arch = "wasm32")]
+pub use keccak256::keccak256;
 
 /// type alias for storage keys
 pub type StorageKey = U256;

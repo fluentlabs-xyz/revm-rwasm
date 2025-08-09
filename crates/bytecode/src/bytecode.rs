@@ -6,6 +6,8 @@
 
 use crate::{
     eip7702::{Eip7702Bytecode, EIP7702_MAGIC_BYTES},
+    ownable_account::{OwnableAccountBytecode, OWNABLE_ACCOUNT_MAGIC_BYTES},
+    rwasm::RWASM_MAGIC_BYTES,
     BytecodeDecodeError, JumpTable, LegacyAnalyzedBytecode, LegacyRawBytecode,
 };
 use core::fmt::Debug;
@@ -19,6 +21,10 @@ pub enum Bytecode {
     Eip7702(Eip7702Bytecode),
     /// The bytecode has been analyzed for valid jump destinations.
     LegacyAnalyzed(LegacyAnalyzedBytecode),
+    /// An Rwasm bytecode
+    Rwasm(Bytes),
+    /// delegated bytecode metadata
+    OwnableAccount(OwnableAccountBytecode),
 }
 
 impl Default for Bytecode {
@@ -58,6 +64,11 @@ impl Bytecode {
         matches!(self, Self::Eip7702(_))
     }
 
+    /// Returns `true` if bytecode is Metadata.
+    pub const fn is_ownable_account(&self) -> bool {
+        matches!(self, Self::OwnableAccount(_))
+    }
+
     /// Creates a new legacy [`Bytecode`].
     #[inline]
     pub fn new_legacy(raw: Bytes) -> Self {
@@ -80,6 +91,12 @@ impl Bytecode {
         Self::Eip7702(Eip7702Bytecode::new(address))
     }
 
+    /// Creates a new metadata [`OwnableAccountBytecode`] from [`Address`].
+    #[inline]
+    pub fn new_ownable_account(address: Address, metadata: Bytes) -> Self {
+        Self::OwnableAccount(OwnableAccountBytecode::new(address, metadata))
+    }
+
     /// Creates a new raw [`Bytecode`].
     ///
     /// Returns an error on incorrect bytecode format.
@@ -91,6 +108,11 @@ impl Bytecode {
                 let eip7702 = Eip7702Bytecode::new_raw(bytes)?;
                 Ok(Self::Eip7702(eip7702))
             }
+            Some(prefix) if prefix == &OWNABLE_ACCOUNT_MAGIC_BYTES => {
+                let instance = OwnableAccountBytecode::new_raw(bytes)?;
+                Ok(Self::OwnableAccount(instance))
+            }
+            Some(prefix) if prefix == &RWASM_MAGIC_BYTES => Ok(Self::Rwasm(bytes)),
             _ => Ok(Self::new_legacy(bytes)),
         }
     }
@@ -114,6 +136,8 @@ impl Bytecode {
         match self {
             Self::LegacyAnalyzed(analyzed) => analyzed.bytecode(),
             Self::Eip7702(code) => code.raw(),
+            Self::OwnableAccount(code) => code.raw(),
+            Self::Rwasm(bytes) => bytes,
         }
     }
 
@@ -134,6 +158,8 @@ impl Bytecode {
         match self {
             Self::LegacyAnalyzed(analyzed) => analyzed.bytecode(),
             Self::Eip7702(code) => code.raw(),
+            Self::OwnableAccount(code) => code.raw(),
+            Self::Rwasm(bytes) => bytes,
         }
     }
 
@@ -149,6 +175,8 @@ impl Bytecode {
         match self {
             Self::LegacyAnalyzed(analyzed) => analyzed.original_bytes(),
             Self::Eip7702(eip7702) => eip7702.raw().clone(),
+            Self::OwnableAccount(metadata) => metadata.raw().clone(),
+            Self::Rwasm(bytes) => bytes.clone(),
         }
     }
 
@@ -158,6 +186,8 @@ impl Bytecode {
         match self {
             Self::LegacyAnalyzed(analyzed) => analyzed.original_byte_slice(),
             Self::Eip7702(eip7702) => eip7702.raw(),
+            Self::OwnableAccount(data) => data.raw(),
+            Self::Rwasm(bytes) => bytes,
         }
     }
 
