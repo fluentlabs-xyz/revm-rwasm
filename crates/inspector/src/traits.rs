@@ -1,14 +1,13 @@
 use crate::{Inspector, JournalExt};
 use context::ContextTr;
+use core::fmt::Debug;
 use handler::{
     evm::{ContextDbError, FrameInitResult, FrameTr},
     instructions::InstructionProvider,
-    EthFrame,
-    EvmTr,
-    FrameInitOrResult,
+    EthFrame, EvmTr, FrameInitOrResult, FrameResult,
 };
+use interpreter::interpreter_action::FrameInit;
 use interpreter::{interpreter::EthInterpreter, FrameInput, Interpreter, InterpreterTypes};
-use std::fmt::Debug;
 
 /// Inspector EVM trait. Extends the [`EvmTr`] trait with inspector related methods.
 ///
@@ -17,7 +16,7 @@ use std::fmt::Debug;
 /// It is used inside [`crate::InspectorHandler`] to extend evm with support for inspection.
 pub trait InspectorEvmTr:
     EvmTr<
-    Frame: InspectorFrame,
+    Frame: FrameTr<FrameResult = FrameResult, FrameInit = FrameInit>,
     Instructions: InstructionProvider<InterpreterTypes = EthInterpreter, Context = Self::Context>,
     Context: ContextTr<Journal: JournalExt>,
 >

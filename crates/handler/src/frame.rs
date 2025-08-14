@@ -1,55 +1,29 @@
 use crate::{
-    evm::FrameTr,
-    item_or_result::FrameInitOrResult,
-    precompile_provider::PrecompileProvider,
-    CallFrame,
-    CreateFrame,
-    FrameData,
-    FrameResult,
-    ItemOrResult,
+    evm::FrameTr, item_or_result::FrameInitOrResult, precompile_provider::PrecompileProvider,
+    CallFrame, CreateFrame, FrameData, FrameResult, ItemOrResult,
 };
 use context::result::FromStringError;
 use context_interface::{
     context::ContextError,
     journaled_state::{JournalCheckpoint, JournalTr},
     local::{FrameToken, OutFrame},
-    Cfg,
-    ContextTr,
-    Database,
+    Cfg, ContextTr, Database,
 };
 use core::{cmp::min, fmt::Debug};
 use derive_where::derive_where;
-use fluentbase_sdk::{is_delegated_runtime_address, try_resolve_precompile_account_from_input};
 use interpreter::{
     gas,
     interpreter::{EthInterpreter, ExtBytecode},
     interpreter_action::FrameInit,
     interpreter_types::ReturnData,
-    CallInput,
-    CallInputs,
-    CallOutcome,
-    CallValue,
-    CreateInputs,
-    CreateOutcome,
-    CreateScheme,
-    FrameInput,
-    Gas,
-    InputsImpl,
-    InstructionResult,
-    Interpreter,
-    InterpreterAction,
-    InterpreterResult,
-    InterpreterTypes,
-    SharedMemory,
+    CallInput, CallInputs, CallOutcome, CallValue, CreateInputs, CreateOutcome, CreateScheme,
+    FrameInput, Gas, InputsImpl, InstructionResult, Interpreter, InterpreterAction,
+    InterpreterResult, InterpreterTypes, SharedMemory,
 };
 use primitives::{
     constants::CALL_STACK_LIMIT,
     hardfork::SpecId::{self, HOMESTEAD, LONDON, SPURIOUS_DRAGON},
-    keccak256,
-    Address,
-    Bytes,
-    B256,
-    U256,
+    keccak256, Address, Bytes, B256, U256,
 };
 use state::Bytecode;
 use std::{borrow::ToOwned, boxed::Box};
@@ -117,12 +91,12 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
         self.interrupted_outcome = Some(interrupted_outcome);
     }
 
-    ///
+    /// Check is call interrupted
     pub fn is_interrupted_call(&self) -> bool {
         self.interrupted_outcome.is_some()
     }
 
-    ///
+    /// Take an interruption outcome
     pub fn take_interrupted_outcome(&mut self) -> Option<EXT> {
         self.interrupted_outcome.take()
     }
@@ -186,7 +160,7 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
         precompiles: &mut PRECOMPILES,
         depth: usize,
         memory: SharedMemory,
-        mut inputs: Box<CallInputs>,
+        inputs: Box<CallInputs>,
     ) -> Result<ItemOrResult<FrameToken, FrameResult>, ERROR> {
         let gas = Gas::new(inputs.gas_limit);
         let return_result = |instruction_result: InstructionResult| {
@@ -279,22 +253,8 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                 .info;
             bytecode = account.code.clone().unwrap_or_default();
             code_hash = account.code_hash();
-            // for EVM runtime write rwasm proxy address (required for protected slot validation)
-            if is_delegated_runtime_address(&ownable_account_bytecode.owner_address) {
-                interpreter_input.account_owner = Some(ownable_account_bytecode.owner_address);
-            }
-        }
-
-        // TODO(dmitry123): "do we want to enable it for testnet?"
-        if let Some(precompiled_address) =
-            try_resolve_precompile_account_from_input(inputs.input.bytes(ctx).as_ref())
-        {
-            let account = &ctx.journal_mut().load_account_code(precompiled_address)?;
-            // rewrite bytecode address and code hash, since rWasm rely on it
-            inputs.bytecode_address = precompiled_address;
-            code_hash = account.info.code_hash;
-            // rewrite bytecode
-            bytecode = account.info.code.clone().unwrap_or_default();
+            // account owner is an execution runtime (like EVM/SVM/ERC20)
+            interpreter_input.account_owner = Some(ownable_account_bytecode.owner_address);
         }
 
         // Returns success if bytecode is empty.
