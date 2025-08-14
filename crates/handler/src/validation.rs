@@ -308,7 +308,7 @@ pub fn validate_initial_tx_gas(
     if spec.is_enabled_in(SpecId::PRAGUE) && floor_gas > tx.gas_limit() {
         // coming from large calldata.
         return Err(InvalidTransaction::GasFloorMoreThanGasLimit {
-            gas_floor: gas.floor_gas,
+            gas_floor: floor_gas,
             gas_limit: tx.gas_limit(),
         });
     };
