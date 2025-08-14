@@ -300,7 +300,7 @@ pub fn validate_initial_tx_gas(
 
     let mut floor_gas = gas.floor_gas;
     if tx.input().starts_with(&WASM_MAGIC_BYTES) {
-        floor_gas = floor_gas / FUEL_DENOM_RATE;
+        floor_gas /= FUEL_DENOM_RATE;
     }
 
     // EIP-7623: Increase calldata cost
