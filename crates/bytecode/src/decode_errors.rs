@@ -1,7 +1,4 @@
-use crate::{
-    eip7702::Eip7702DecodeError,
-    ownable_account::OwnableAccountDecodeError,
-};
+use crate::{eip7702::Eip7702DecodeError, ownable_account::OwnableAccountDecodeError};
 use core::fmt::Debug;
 use std::fmt;
 

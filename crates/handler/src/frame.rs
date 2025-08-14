@@ -1,21 +1,13 @@
 use crate::{
-    evm::FrameTr,
-    item_or_result::FrameInitOrResult,
-    precompile_provider::PrecompileProvider,
-    CallFrame,
-    CreateFrame,
-    FrameData,
-    FrameResult,
-    ItemOrResult,
+    evm::FrameTr, item_or_result::FrameInitOrResult, precompile_provider::PrecompileProvider,
+    CallFrame, CreateFrame, FrameData, FrameResult, ItemOrResult,
 };
 use context::result::FromStringError;
 use context_interface::{
     context::ContextError,
     journaled_state::{JournalCheckpoint, JournalTr},
     local::{FrameToken, OutFrame},
-    Cfg,
-    ContextTr,
-    Database,
+    Cfg, ContextTr, Database,
 };
 use core::{cmp::min, fmt::Debug};
 use derive_where::derive_where;
@@ -24,31 +16,14 @@ use interpreter::{
     interpreter::{EthInterpreter, ExtBytecode},
     interpreter_action::FrameInit,
     interpreter_types::ReturnData,
-    CallInput,
-    CallInputs,
-    CallOutcome,
-    CallValue,
-    CreateInputs,
-    CreateOutcome,
-    CreateScheme,
-    FrameInput,
-    Gas,
-    InputsImpl,
-    InstructionResult,
-    Interpreter,
-    InterpreterAction,
-    InterpreterResult,
-    InterpreterTypes,
-    SharedMemory,
+    CallInput, CallInputs, CallOutcome, CallValue, CreateInputs, CreateOutcome, CreateScheme,
+    FrameInput, Gas, InputsImpl, InstructionResult, Interpreter, InterpreterAction,
+    InterpreterResult, InterpreterTypes, SharedMemory,
 };
 use primitives::{
     constants::CALL_STACK_LIMIT,
     hardfork::SpecId::{self, HOMESTEAD, LONDON, SPURIOUS_DRAGON},
-    keccak256,
-    Address,
-    Bytes,
-    B256,
-    U256,
+    keccak256, Address, Bytes, B256, U256,
 };
 use state::Bytecode;
 use std::{borrow::ToOwned, boxed::Box};

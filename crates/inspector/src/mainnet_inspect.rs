@@ -1,26 +1,14 @@
 use crate::{
     handler::{frame_end, frame_start},
     inspect::{InspectCommitEvm, InspectEvm},
-    inspect_instructions,
-    Inspector,
-    InspectorEvmTr,
-    InspectorFrame,
-    InspectorHandler,
-    JournalExt,
+    inspect_instructions, Inspector, InspectorEvmTr, InspectorFrame, InspectorHandler, JournalExt,
 };
 use context::{ContextSetters, ContextTr, Evm, JournalTr};
 use database_interface::DatabaseCommit;
 use handler::{
     evm::{ContextDbError, FrameInitResult},
     instructions::InstructionProvider,
-    EthFrame,
-    EvmTr,
-    EvmTrError,
-    FrameInitOrResult,
-    FrameTr,
-    Handler,
-    ItemOrResult,
-    MainnetHandler,
+    EthFrame, EvmTr, EvmTrError, FrameInitOrResult, FrameTr, Handler, ItemOrResult, MainnetHandler,
     PrecompileProvider,
 };
 use interpreter::{interpreter::EthInterpreter, InterpreterResult};

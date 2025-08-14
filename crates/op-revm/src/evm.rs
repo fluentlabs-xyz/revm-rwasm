@@ -6,22 +6,14 @@ use revm::{
     handler::{
         evm::{ContextDbError, FrameInitResult, FrameTr},
         instructions::{EthInstructions, InstructionProvider},
-        EthFrame,
-        EvmTr,
-        FrameInitOrResult,
-        ItemOrResult,
-        PrecompileProvider,
+        EthFrame, EvmTr, FrameInitOrResult, ItemOrResult, PrecompileProvider,
     },
     inspector::{
         handler::{frame_end, frame_start},
-        inspect_instructions,
-        InspectorEvmTr,
-        InspectorFrame,
-        JournalExt,
+        inspect_instructions, InspectorEvmTr, InspectorFrame, JournalExt,
     },
     interpreter::{interpreter::EthInterpreter, InterpreterResult},
-    Database,
-    Inspector,
+    Database, Inspector,
 };
 
 /// Optimism EVM extends the [`Evm`] type with Optimism specific types and logic.

@@ -8,10 +8,7 @@ use crate::{
     eip7702::{Eip7702Bytecode, EIP7702_MAGIC_BYTES},
     ownable_account::{OwnableAccountBytecode, OWNABLE_ACCOUNT_MAGIC_BYTES},
     rwasm::RWASM_MAGIC_BYTES,
-    BytecodeDecodeError,
-    JumpTable,
-    LegacyAnalyzedBytecode,
-    LegacyRawBytecode,
+    BytecodeDecodeError, JumpTable, LegacyAnalyzedBytecode, LegacyRawBytecode,
 };
 use core::fmt::Debug;
 use primitives::{keccak256, Address, Bytes, B256, KECCAK_EMPTY};
