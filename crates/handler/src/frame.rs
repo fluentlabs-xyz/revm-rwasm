@@ -91,12 +91,12 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
         self.interrupted_outcome = Some(interrupted_outcome);
     }
 
-    ///
+    /// Check is call interrupted
     pub fn is_interrupted_call(&self) -> bool {
         self.interrupted_outcome.is_some()
     }
 
-    ///
+    /// Take an interruption outcome
     pub fn take_interrupted_outcome(&mut self) -> Option<EXT> {
         self.interrupted_outcome.take()
     }
