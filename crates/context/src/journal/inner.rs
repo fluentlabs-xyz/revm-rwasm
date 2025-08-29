@@ -9,6 +9,7 @@ use context_interface::{
 };
 use core::mem;
 use database_interface::Database;
+use primitives::eip7708::create_eip7708_log;
 use primitives::{
     hardfork::SpecId::{self, *},
     hash_map::Entry,
@@ -16,6 +17,7 @@ use primitives::{
 };
 use state::{Account, EvmState, EvmStorageSlot, TransientStorage};
 use std::vec::Vec;
+
 /// Inner journal state that contains journal and state changes.
 ///
 /// Spec Id is a essential information for the Journal.
@@ -382,6 +384,9 @@ impl<ENTRY: JournalEntryTr> JournalInner<ENTRY> {
         self.journal
             .push(ENTRY::balance_transfer(from, to, balance));
 
+        // Emit native transfer log
+        self.log(create_eip7708_log(from, to, balance));
+
         Ok(None)
     }
 
@@ -460,6 +465,9 @@ impl<ENTRY: JournalEntryTr> JournalInner<ENTRY> {
 
         // add journal entry of transferred balance
         last_journal.push(ENTRY::balance_transfer(caller, target_address, balance));
+
+        // Emit native transfer log
+        self.log(create_eip7708_log(caller, target_address, balance));
 
         Ok(checkpoint)
     }
@@ -557,6 +565,8 @@ impl<ENTRY: JournalEntryTr> JournalInner<ENTRY> {
             ))
         } else if address != target {
             acc.info.balance = U256::ZERO;
+            // Emit native transfer log
+            self.log(create_eip7708_log(address, target, balance));
             Some(ENTRY::balance_transfer(address, target, balance))
         } else {
             // State is not changed:
