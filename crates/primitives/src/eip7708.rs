@@ -1,6 +1,6 @@
-///! EIP-7708: ETH transfers emit a log
-///!
-///! https://eips.ethereum.org/EIPS/eip-7708
+//! EIP-7708: ETH transfers emit a log
+//!
+//! https://eips.ethereum.org/EIPS/eip-7708
 use alloy_primitives::{address, b256, Address, Log, LogData, B256, U256};
 use std::vec;
 

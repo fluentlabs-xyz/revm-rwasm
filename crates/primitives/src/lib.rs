@@ -12,7 +12,6 @@ pub mod eip170;
 pub mod eip3860;
 pub mod eip4844;
 pub mod eip7702;
-/// EIP-7708
 pub mod eip7708;
 pub mod eip7823;
 pub mod eip7825;
