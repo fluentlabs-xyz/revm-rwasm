@@ -1,5 +1,3 @@
-use crate::Bytes;
-
 /// WASM max code size
 ///
 /// This value is temporary for testing purposes, requires recalculation.
@@ -31,8 +29,8 @@ pub const SVM_ELF_MAGIC_BYTES: [u8; 4] = [0x7f, 0x45, 0x4c, 0x46];
 pub const ERC20_MAGIC_BYTES: [u8; 4] = [0x45, 0x52, 0x43, 0x20];
 
 /// Get max code size based on the input signature
-pub fn wasm_max_code_size(input: &Bytes) -> Option<usize> {
-    let input: [u8; 4] = input.get(0..4)?.try_into().unwrap();
+pub fn wasm_max_code_size<T: AsRef<[u8]>>(input: T) -> Option<usize> {
+    let input: [u8; 4] = input.as_ref().get(0..4)?.try_into().unwrap();
     match input {
         WASM_MAGIC_BYTES => Some(WASM_MAX_CODE_SIZE),
         SVM_ELF_MAGIC_BYTES => Some(SVM_MAX_CODE_SIZE),

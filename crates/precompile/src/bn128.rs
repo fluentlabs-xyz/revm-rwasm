@@ -190,6 +190,7 @@ pub fn run_mul(input: &[u8], gas_cost: u64, gas_limit: u64) -> PrecompileResult 
 }
 
 /// Run the Bn128 pair precompile
+#[allow(clippy::manual_is_multiple_of)]
 pub fn run_pair(
     input: &[u8],
     pair_per_point_cost: u64,

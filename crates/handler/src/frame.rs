@@ -564,6 +564,7 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                 }));
             }
             InterpreterAction::Return(result) => result,
+            InterpreterAction::SystemInterruption { .. } => unreachable!(),
         };
 
         // Handle return from frame

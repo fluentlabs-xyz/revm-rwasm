@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [ devel, main, "release/**" ]
+    branches: [ devel, main, v82-patched, "release/**" ]
   pull_request:
-    branches: [ devel, main, "release/**" ]
+    branches: [ devel, main, v82-patched, "release/**" ]
 
 jobs:
   test:
