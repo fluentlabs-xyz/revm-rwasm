@@ -36,7 +36,7 @@ rwasm = { workspace = true }
 
 [features]
 default = ["std", "parse"]
-std = ["serde?/std", "primitives/std", "bitvec/std", "once_cell/std", "phf?/std"]
+std = ["serde?/std", "primitives/std", "bitvec/std", "once_cell/std", "phf?/std", "rwasm/std"]
 hashbrown = ["primitives/hashbrown"]
 serde = ["dep:serde", "primitives/serde", "bitvec/serde", "phf?/serde", "rwasm/serde"]
 serde-json = ["serde"]
