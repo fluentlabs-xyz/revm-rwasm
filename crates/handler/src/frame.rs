@@ -254,6 +254,7 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                 .info;
             bytecode = account.code.clone().unwrap_or_default();
             code_hash = account.code_hash();
+            // account owner is an execution runtime (like EVM/SVM/ERC20)
             interpreter_input.account_owner = Some(ownable_account_bytecode.owner_address);
         }
 
