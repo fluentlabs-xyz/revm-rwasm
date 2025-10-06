@@ -4,7 +4,7 @@ use context_interface::{
     Block, Cfg, ContextTr,
 };
 use core::cmp;
-use interpreter::gas::{self, InitialAndFloorGas, FUEL_DENOM_RATE};
+use interpreter::gas::{self, InitialAndFloorGas};
 use primitives::wasm::WASM_MAGIC_BYTES;
 use primitives::{eip4844, hardfork::SpecId, wasm::wasm_max_code_size, B256};
 
@@ -299,8 +299,20 @@ pub fn validate_initial_tx_gas(
     }
 
     let mut floor_gas = gas.floor_gas;
+
+    // Fuel denomination rate rwasm -> evm
+    // Testnet uses legacy rate (1000), correct rate is 20
+    // see more details here:
+    // https://github.com/fluentlabs-xyz/fluentbase/blob/devel/crates/types/src/lib.rs#L63
+
     if tx.input().starts_with(&WASM_MAGIC_BYTES) {
-        floor_gas /= FUEL_DENOM_RATE;
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "fluent-testnet")] {
+                floor_gas /= 1000;
+            } else {
+                floor_gas /= 20;
+            }
+        }
     }
 
     // EIP-7623: Increase calldata cost
