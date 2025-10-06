@@ -300,12 +300,19 @@ pub fn validate_initial_tx_gas(
 
     let mut floor_gas = gas.floor_gas;
 
-    // Fuel denomination rate rwasm -> evm is 20
+    // Fuel denomination rate rwasm -> evm
+    // Testnet uses legacy rate (1000), correct rate is 20
     // see more details here:
     // https://github.com/fluentlabs-xyz/fluentbase/blob/devel/crates/types/src/lib.rs#L63
 
     if tx.input().starts_with(&WASM_MAGIC_BYTES) {
-        floor_gas /= 20;
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "fluent-testnet")] {
+                floor_gas /= 1000;
+            } else {
+                floor_gas /= 20;
+            }
+        }
     }
 
     // EIP-7623: Increase calldata cost
