@@ -104,4 +104,4 @@ pub const MIN_CALLEE_GAS: u64 = CALL_STIPEND;
 /// A fuel denomination rate for rWasm vs. EVM opcodes
 ///
 /// Make sure this value is synchronized with a Fluentbase version
-pub const FUEL_DENOM_RATE: u64 = 1000;
+pub const FUEL_DENOM_RATE: u64 = 20;
