@@ -306,7 +306,7 @@ pub fn execute_test_suite(
         let cache_state = unit.state();
 
         // Setup base configuration
-        let mut cfg = CfgEnv::default();
+        let mut cfg = CfgEnv::default().disable_rwasm();
         cfg.chain_id = unit
             .env
             .current_chain_id
