@@ -74,6 +74,7 @@ pub fn test_multi_tx_create() {
     let mut evm = Context::mainnet()
         .modify_cfg_chained(|cfg| {
             cfg.spec = SpecId::BERLIN;
+            cfg.is_rwasm = false;
             cfg.disable_nonce_check = true;
         })
         .with_db(BenchmarkDB::new_bytecode(Bytecode::new()))
