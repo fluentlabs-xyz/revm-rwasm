@@ -58,6 +58,9 @@ pub trait Cfg {
 
     /// Returns whether the priority fee check is disabled.
     fn is_priority_fee_check_disabled(&self) -> bool;
+
+    /// Returns whether legacy bytecode creation is enabled.
+    fn is_legacy_bytecode_enabled(&self) -> bool;
 }
 
 /// What bytecode analysis to perform
