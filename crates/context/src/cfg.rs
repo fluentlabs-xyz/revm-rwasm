@@ -55,6 +55,10 @@ pub struct CfgEnv<SPEC = SpecId> {
     /// Introduced in Osaka in [EIP-7825: Transaction Gas Limit Cap](https://eips.ethereum.org/EIPS/eip-7825)
     /// with initials cap of 30M.
     pub tx_gas_limit_cap: Option<u64>,
+
+    /// Whether the execution is for rwasm module.
+    pub is_rwasm: bool,
+
     /// A hard memory limit in bytes beyond which
     /// [OutOfGasError::Memory][context_interface::result::OutOfGasError::Memory] cannot be resized.
     ///
@@ -145,6 +149,7 @@ impl<SPEC> CfgEnv<SPEC> {
             max_blobs_per_tx: None,
             tx_gas_limit_cap: None,
             blob_base_fee_update_fraction: None,
+            is_rwasm: true,
             #[cfg(feature = "memory_limit")]
             memory_limit: (1 << 32) - 1,
             #[cfg(feature = "optional_balance_check")]
@@ -165,6 +170,11 @@ impl<SPEC> CfgEnv<SPEC> {
     /// Consumes `self` and returns a new `CfgEnv` with the specified chain ID.
     pub fn with_chain_id(mut self, chain_id: u64) -> Self {
         self.chain_id = chain_id;
+        self
+    }
+    /// Sets the rwasm flag to false.
+    pub fn disable_rwasm(mut self) -> Self {
+        self.is_rwasm = false;
         self
     }
 
@@ -192,6 +202,7 @@ impl<SPEC> CfgEnv<SPEC> {
             tx_gas_limit_cap: self.tx_gas_limit_cap,
             max_blobs_per_tx: self.max_blobs_per_tx,
             blob_base_fee_update_fraction: self.blob_base_fee_update_fraction,
+            is_rwasm: self.is_rwasm,
             #[cfg(feature = "memory_limit")]
             memory_limit: self.memory_limit,
             #[cfg(feature = "optional_balance_check")]
@@ -242,11 +253,6 @@ impl<SPEC: Into<SpecId> + Copy> Cfg for CfgEnv<SPEC> {
     }
 
     #[inline]
-    fn spec(&self) -> Self::Spec {
-        self.spec
-    }
-
-    #[inline]
     fn tx_chain_id_check(&self) -> bool {
         self.tx_chain_id_check
     }
@@ -259,6 +265,11 @@ impl<SPEC: Into<SpecId> + Copy> Cfg for CfgEnv<SPEC> {
             } else {
                 u64::MAX
             })
+    }
+
+    #[inline]
+    fn spec(&self) -> Self::Spec {
+        self.spec
     }
 
     #[inline]
@@ -280,20 +291,20 @@ impl<SPEC: Into<SpecId> + Copy> Cfg for CfgEnv<SPEC> {
             .unwrap_or(eip3860::MAX_INITCODE_SIZE)
     }
 
-    fn is_eip3541_disabled(&self) -> bool {
+    fn is_eip3607_disabled(&self) -> bool {
         cfg_if::cfg_if! {
-            if #[cfg(feature = "optional_eip3541")] {
-                self.disable_eip3541
+            if #[cfg(feature = "optional_eip3607")] {
+                self.disable_eip3607
             } else {
                 false
             }
         }
     }
 
-    fn is_eip3607_disabled(&self) -> bool {
+    fn is_eip3541_disabled(&self) -> bool {
         cfg_if::cfg_if! {
-            if #[cfg(feature = "optional_eip3607")] {
-                self.disable_eip3607
+            if #[cfg(feature = "optional_eip3541")] {
+                self.disable_eip3541
             } else {
                 false
             }
@@ -343,6 +354,10 @@ impl<SPEC: Into<SpecId> + Copy> Cfg for CfgEnv<SPEC> {
                 false
             }
         }
+    }
+
+    fn is_rwasm(&self) -> bool {
+        self.is_rwasm
     }
 }
 
