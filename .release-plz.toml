@@ -1,11 +1,9 @@
-[release]
+[workspace]
 # Always bump only the patch version
 features_always_increment_minor = false
 # Optional: disable semver checks to avoid major/minor bumps
 semver_check = false
 
-update_deps = true
-consolidate_commits = true
 allow_dirty = false
 publish = true
 git_release_enable = true
