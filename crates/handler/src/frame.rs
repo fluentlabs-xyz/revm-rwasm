@@ -843,7 +843,7 @@ mod tests {
             0x6000,
             false,
             SpecId::PRAGUE,
-            true,
+            false,
         );
 
         let account1 = journal.load_account(addr1).unwrap();
@@ -872,7 +872,7 @@ mod tests {
             0x6000,
             false,
             SpecId::PRAGUE,
-            false,
+            true,
         );
 
         let account2 = journal.load_account(addr2).unwrap();
