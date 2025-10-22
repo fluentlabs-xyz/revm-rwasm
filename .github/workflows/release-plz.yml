@@ -29,10 +29,19 @@ jobs:
           git add Cargo.lock
           git diff --cached --quiet || git commit -m "chore: update Cargo.lock"
 
-      - name: Run release-plz (create or update release PR)
-        uses: MarcoIeni/release-plz-action@v0.5
-        with:
-          command: release-pr
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Run release-plz (only for *-rwasm crates)
+        run: |
+          packages=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[].name' | grep -- '-rwasm' | tr '\n' ' ')
+          echo "Detected rwasm packages:"
+          echo "$packages"
+          if [ -z "$packages" ]; then
+            echo "No -rwasm packages found. Skipping release-plz."
+            exit 0
+          fi
+          release-plz release-pr --packages $packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
