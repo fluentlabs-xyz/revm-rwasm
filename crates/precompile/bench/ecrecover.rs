@@ -1,7 +1,7 @@
 //! Benchmarks for the ecrecover precompile
 use criterion::{measurement::Measurement, BenchmarkGroup};
 use primitives::{hex, keccak256, Bytes, U256};
-use revm_precompile::secp256k1::ec_recover_run;
+use revm_rwasm_precompile::secp256k1::ec_recover_run;
 use secp256k1::{Message, SecretKey, SECP256K1};
 
 /// Add benches for the ecrecover precompile

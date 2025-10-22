@@ -1,7 +1,7 @@
 //! Benchmarks for the KZG point evaluation precompile
 use criterion::{measurement::Measurement, BenchmarkGroup};
 use primitives::{eip4844::VERSIONED_HASH_VERSION_KZG, hex};
-use revm_precompile::kzg_point_evaluation::run;
+use revm_rwasm_precompile::kzg_point_evaluation::run;
 use sha2::{Digest, Sha256};
 
 /// Add benches for the KZG point evaluation precompile

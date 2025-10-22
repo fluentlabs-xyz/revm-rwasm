@@ -8,5 +8,5 @@ name = "custom_precompile_journal"
 path = "src/main.rs"
 
 [dependencies]
-revm = { path = "../../crates/revm", features = ["optional_eip3607"] }
+revm = { package = "revm-rwasm", path = "../../crates/revm", features = ["optional_eip3607"] }
 anyhow = "1.0"
