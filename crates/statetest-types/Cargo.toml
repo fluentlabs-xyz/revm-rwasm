@@ -1,5 +1,5 @@
 [package]
-name = "revm-statetest-types"
+name = "revm-rwasm-statetest-types"
 description = "Statetest types for revme"
 version = "8.0.4"
 authors.workspace = true

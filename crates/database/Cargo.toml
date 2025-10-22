@@ -1,5 +1,5 @@
 [package]
-name = "revm-database"
+name = "revm-rwasm-database"
 description = "Revm Database implementations"
 version = "7.0.1"
 authors.workspace = true

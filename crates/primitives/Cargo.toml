@@ -1,5 +1,5 @@
 [package]
-name = "revm-primitives"
+name = "revm-rwasm-primitives"
 description = "Revm primitives types"
 version = "20.0.0"
 authors.workspace = true

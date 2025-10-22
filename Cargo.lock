@@ -1721,7 +1721,7 @@ name = "custom_precompile_journal"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "revm",
+ "revm-rwasm",
 ]
 
 [[package]]
@@ -2055,7 +2055,7 @@ dependencies = [
  "alloy-provider",
  "anyhow",
  "indicatif",
- "revm",
+ "revm-rwasm",
  "tokio",
 ]
 
@@ -2064,7 +2064,7 @@ name = "example-cheatcode-inspector"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "revm",
+ "revm-rwasm",
 ]
 
 [[package]]
@@ -2072,14 +2072,14 @@ name = "example-contract-deployment"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "revm",
+ "revm-rwasm",
 ]
 
 [[package]]
 name = "example-custom-opcodes"
 version = "0.0.0"
 dependencies = [
- "revm",
+ "revm-rwasm",
 ]
 
 [[package]]
@@ -2087,7 +2087,7 @@ name = "example-database-components"
 version = "0.0.0"
 dependencies = [
  "auto_impl",
- "revm",
+ "revm-rwasm",
  "thiserror 2.0.12",
 ]
 
@@ -2098,7 +2098,7 @@ dependencies = [
  "alloy-provider",
  "alloy-sol-types",
  "anyhow",
- "revm",
+ "revm-rwasm",
  "tokio",
 ]
 
@@ -2106,7 +2106,7 @@ dependencies = [
 name = "example-my-evm"
 version = "0.0.0"
 dependencies = [
- "revm",
+ "revm-rwasm",
 ]
 
 [[package]]
@@ -2117,7 +2117,7 @@ dependencies = [
  "alloy-provider",
  "alloy-sol-types",
  "anyhow",
- "revm",
+ "revm-rwasm",
  "tokio",
 ]
 
@@ -2129,7 +2129,7 @@ dependencies = [
  "alloy-provider",
  "alloy-sol-types",
  "anyhow",
- "revm",
+ "revm-rwasm",
  "tokio",
 ]
 
@@ -3376,14 +3376,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
 
 [[package]]
-name = "op-revm"
+name = "op-revm-rwasm"
 version = "8.0.3"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "auto_impl",
  "once_cell",
- "revm",
+ "revm-rwasm",
  "rstest",
  "serde",
  "serde_json",
@@ -4182,78 +4182,78 @@ dependencies = [
 ]
 
 [[package]]
-name = "revm"
+name = "revm-rwasm"
 version = "27.0.3"
 dependencies = [
- "revm-bytecode",
- "revm-context",
- "revm-context-interface",
- "revm-database",
- "revm-database-interface",
- "revm-handler",
- "revm-inspector",
- "revm-interpreter",
- "revm-precompile",
- "revm-primitives",
- "revm-state",
+ "revm-rwasm-bytecode",
+ "revm-rwasm-context",
+ "revm-rwasm-context-interface",
+ "revm-rwasm-database",
+ "revm-rwasm-database-interface",
+ "revm-rwasm-handler",
+ "revm-rwasm-inspector",
+ "revm-rwasm-interpreter",
+ "revm-rwasm-precompile",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "revm-bytecode"
+name = "revm-rwasm-bytecode"
 version = "6.0.1"
 dependencies = [
  "bitvec",
  "once_cell",
  "paste",
  "phf",
- "revm-primitives",
+ "revm-rwasm-primitives",
  "rwasm",
  "serde",
 ]
 
 [[package]]
-name = "revm-context"
+name = "revm-rwasm-context"
 version = "8.0.3"
 dependencies = [
  "cfg-if",
  "derive-where",
- "revm-bytecode",
- "revm-context-interface",
- "revm-database",
- "revm-database-interface",
- "revm-primitives",
- "revm-state",
+ "revm-rwasm-bytecode",
+ "revm-rwasm-context-interface",
+ "revm-rwasm-database",
+ "revm-rwasm-database-interface",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
  "serde",
 ]
 
 [[package]]
-name = "revm-context-interface"
+name = "revm-rwasm-context-interface"
 version = "8.0.1"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702",
  "auto_impl",
  "either",
- "revm-database-interface",
- "revm-primitives",
- "revm-state",
+ "revm-rwasm-database-interface",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
  "serde",
 ]
 
 [[package]]
-name = "revm-database"
+name = "revm-rwasm-database"
 version = "7.0.1"
 dependencies = [
  "alloy-eips",
  "alloy-provider",
  "alloy-transport",
  "anyhow",
- "revm-bytecode",
- "revm-database-interface",
- "revm-primitives",
- "revm-state",
+ "revm-rwasm-bytecode",
+ "revm-rwasm-database-interface",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
  "rstest",
  "serde",
  "serde_json",
@@ -4261,21 +4261,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "revm-database-interface"
+name = "revm-rwasm-database-interface"
 version = "7.0.1"
 dependencies = [
  "anyhow",
  "auto_impl",
  "either",
- "revm-primitives",
- "revm-state",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
  "rstest",
  "serde",
  "tokio",
 ]
 
 [[package]]
-name = "revm-handler"
+name = "revm-rwasm-handler"
 version = "8.0.3"
 dependencies = [
  "alloy-eip7702",
@@ -4284,48 +4284,48 @@ dependencies = [
  "alloy-signer-local",
  "auto_impl",
  "derive-where",
- "revm-bytecode",
- "revm-context",
- "revm-context-interface",
- "revm-database",
- "revm-database-interface",
- "revm-interpreter",
- "revm-precompile",
- "revm-primitives",
- "revm-state",
+ "revm-rwasm-bytecode",
+ "revm-rwasm-context",
+ "revm-rwasm-context-interface",
+ "revm-rwasm-database",
+ "revm-rwasm-database-interface",
+ "revm-rwasm-interpreter",
+ "revm-rwasm-precompile",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
  "serde",
 ]
 
 [[package]]
-name = "revm-inspector"
+name = "revm-rwasm-inspector"
 version = "8.0.3"
 dependencies = [
  "auto_impl",
  "either",
- "revm-context",
- "revm-database",
- "revm-database-interface",
- "revm-handler",
- "revm-interpreter",
- "revm-primitives",
- "revm-state",
+ "revm-rwasm-context",
+ "revm-rwasm-database",
+ "revm-rwasm-database-interface",
+ "revm-rwasm-handler",
+ "revm-rwasm-interpreter",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "revm-interpreter"
+name = "revm-rwasm-interpreter"
 version = "23.0.2"
 dependencies = [
  "bincode 2.0.1",
- "revm-bytecode",
- "revm-context-interface",
- "revm-primitives",
+ "revm-rwasm-bytecode",
+ "revm-rwasm-context-interface",
+ "revm-rwasm-primitives",
  "serde",
 ]
 
 [[package]]
-name = "revm-precompile"
+name = "revm-rwasm-precompile"
 version = "24.0.1"
 dependencies = [
  "ark-bls12-381",
@@ -4346,7 +4346,7 @@ dependencies = [
  "once_cell",
  "p256",
  "rand 0.9.1",
- "revm-primitives",
+ "revm-rwasm-primitives",
  "ripemd",
  "rstest",
  "rug",
@@ -4356,7 +4356,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "revm-primitives"
+name = "revm-rwasm-primitives"
 version = "20.0.0"
 dependencies = [
  "alloy-primitives",
@@ -4365,21 +4365,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "revm-state"
+name = "revm-rwasm-state"
 version = "7.0.1"
 dependencies = [
  "bitflags",
- "revm-bytecode",
- "revm-primitives",
+ "revm-rwasm-bytecode",
+ "revm-rwasm-primitives",
  "serde",
 ]
 
 [[package]]
-name = "revm-statetest-types"
+name = "revm-rwasm-statetest-types"
 version = "8.0.4"
 dependencies = [
  "k256",
- "revm",
+ "revm-rwasm",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
@@ -4398,16 +4398,16 @@ dependencies = [
  "indicatif",
  "k256",
  "plain_hasher",
- "revm",
- "revm-bytecode",
- "revm-context",
- "revm-context-interface",
- "revm-database",
- "revm-database-interface",
- "revm-inspector",
- "revm-primitives",
- "revm-state",
- "revm-statetest-types",
+ "revm-rwasm",
+ "revm-rwasm-bytecode",
+ "revm-rwasm-context",
+ "revm-rwasm-context-interface",
+ "revm-rwasm-database",
+ "revm-rwasm-database-interface",
+ "revm-rwasm-inspector",
+ "revm-rwasm-primitives",
+ "revm-rwasm-state",
+ "revm-rwasm-statetest-types",
  "serde",
  "serde_json",
  "thiserror 2.0.12",

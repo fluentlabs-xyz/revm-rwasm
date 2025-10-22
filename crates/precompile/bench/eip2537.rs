@@ -5,7 +5,7 @@ use ark_std::rand::{rngs::StdRng, SeedableRng};
 use arkworks_general::{encode_base_field, encode_field_32_bytes, random_field, random_points};
 use criterion::{measurement::Measurement, BenchmarkGroup};
 use primitives::Bytes;
-use revm_precompile::bls12_381_const::{PADDED_FP_LENGTH, PADDED_G1_LENGTH, PADDED_G2_LENGTH};
+use revm_rwasm_precompile::bls12_381_const::{PADDED_FP_LENGTH, PADDED_G1_LENGTH, PADDED_G2_LENGTH};
 
 const RNG_SEED: u64 = 42;
 const MAX_MSM_SIZE: usize = 256;

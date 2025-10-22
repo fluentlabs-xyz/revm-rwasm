@@ -1,5 +1,5 @@
 [package]
-name = "revm-context"
+name = "revm-rwasm-context"
 description = "Revm context crates"
 version = "8.0.3"
 authors.workspace = true
