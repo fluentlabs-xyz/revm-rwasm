@@ -7,6 +7,8 @@ edition.workspace = true
 keywords.workspace = true
 license.workspace = true
 repository.workspace = true
+metadata.release = false
+
 
 [dependencies]
 # revm
