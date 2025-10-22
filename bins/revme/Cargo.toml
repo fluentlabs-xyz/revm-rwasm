@@ -1,13 +1,15 @@
 [package]
 name = "revme"
 description = "Rust Ethereum Virtual Machine Executable"
-version = "8.0.0"
+version = "7.0.4"
 authors.workspace = true
 edition.workspace = true
 keywords.workspace = true
 license.workspace = true
 repository.workspace = true
-metadata.release = false
+
+[package.metadata.release]
+release = false
 
 
 [dependencies]

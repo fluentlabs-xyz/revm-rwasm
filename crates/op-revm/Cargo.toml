@@ -18,7 +18,7 @@ workspace = true
 
 [dependencies]
 # revm
-revm.workspace = true
+revm = {workspace = true, package = "revm-rwasm"}
 auto_impl.workspace = true
 
 # static precompile sets.
