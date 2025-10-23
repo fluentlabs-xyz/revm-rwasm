@@ -5,7 +5,7 @@ use common::compare_or_save_testdata;
 use context::ContextTr;
 use database::BENCH_CALLER;
 use primitives::{address, b256, hardfork::SpecId, Bytes, TxKind, KECCAK_EMPTY};
-use revm::{
+use revm_rwasm::{
     bytecode::opcode,
     context::TxEnv,
     database::{BenchmarkDB, BENCH_TARGET},

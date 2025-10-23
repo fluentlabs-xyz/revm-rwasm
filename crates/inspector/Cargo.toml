@@ -1,5 +1,5 @@
 [package]
-name = "revm-inspector"
+name = "revm-rwasm-inspector"
 description = "Revm inspector interface"
 version = "8.0.3"
 authors.workspace = true

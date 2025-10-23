@@ -1,5 +1,5 @@
 [package]
-name = "op-revm"
+name = "op-revm-rwasm"
 description = "Optimism variant of Revm"
 version = "8.0.3"
 authors.workspace = true

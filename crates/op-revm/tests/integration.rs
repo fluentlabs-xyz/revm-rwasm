@@ -2,7 +2,7 @@
 mod common;
 
 use common::compare_or_save_testdata;
-use op_revm::{
+use op_revm_rwasm::{
     precompiles::bn128_pair::GRANITE_MAX_INPUT_SIZE, DefaultOp, L1BlockInfo, OpBuilder,
     OpHaltReason, OpSpecId, OpTransaction,
 };

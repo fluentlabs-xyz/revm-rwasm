@@ -1,5 +1,5 @@
 [package]
-name = "revm-context-interface"
+name = "revm-rwasm-context-interface"
 description = "Revm context interface crates"
 version = "8.0.1"
 authors.workspace = true
