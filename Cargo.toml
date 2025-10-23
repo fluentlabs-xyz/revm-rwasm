@@ -125,7 +125,7 @@ triehash = "0.8"
 walkdir = "2.5"
 
 # rwasm
-rwasm = { version = "0.1.0", package = "fluent-rwasm", default-features = false }
+rwasm = { version = "0.3.2", package = "fluent-rwasm", default-features = false }
 #rwasm = { path = "../../../rwasm", default-features = false }
 
 [workspace.package]

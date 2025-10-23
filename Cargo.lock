@@ -2221,18 +2221,15 @@ dependencies = [
 
 [[package]]
 name = "fluent-rwasm"
-version = "0.1.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c43b3e0bb0994c97a4bebe54b3ff78a9c5ebe47a90811c58ee3b6cca84abd0fa"
+checksum = "2ef1ee913bd4282348085e7c1b6dd2cae63e24fe8c4fff83ca15236aed3f4c90"
 dependencies = [
  "bincode 2.0.1",
  "bitvec",
  "bytes",
- "cfg-if",
  "downcast-rs",
- "fnv",
  "hashbrown 0.15.4",
- "libc",
  "libm",
  "num-derive",
  "num-traits",
