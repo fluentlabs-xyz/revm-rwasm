@@ -1,5 +1,5 @@
 [package]
-name = "revm-precompile"
+name = "revm-rwasm-precompile"
 description = "Revm Precompiles - Ethereum compatible precompiled contracts"
 version = "24.0.1"
 authors.workspace = true
