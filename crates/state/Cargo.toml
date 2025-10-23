@@ -1,5 +1,5 @@
 [package]
-name = "revm-state"
+name = "revm-rwasm-state"
 description = "Revm state types"
 version = "7.0.1"
 authors.workspace = true

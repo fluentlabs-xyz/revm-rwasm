@@ -5,7 +5,9 @@ use ark_std::rand::{rngs::StdRng, SeedableRng};
 use arkworks_general::{encode_base_field, encode_field_32_bytes, random_field, random_points};
 use criterion::{measurement::Measurement, BenchmarkGroup};
 use primitives::Bytes;
-use revm_precompile::bls12_381_const::{PADDED_FP_LENGTH, PADDED_G1_LENGTH, PADDED_G2_LENGTH};
+use revm_rwasm_precompile::bls12_381_const::{
+    PADDED_FP_LENGTH, PADDED_G1_LENGTH, PADDED_G2_LENGTH,
+};
 
 const RNG_SEED: u64 = 42;
 const MAX_MSM_SIZE: usize = 256;
@@ -20,7 +22,7 @@ mod arkworks_general {
     use ark_ff::Field;
 
     use ark_serialize::CanonicalSerialize;
-    use revm_precompile::bls12_381_const::{FP_LENGTH, FP_PAD_BY, PADDED_FP_LENGTH};
+    use revm_rwasm_precompile::bls12_381_const::{FP_LENGTH, FP_PAD_BY, PADDED_FP_LENGTH};
 
     pub(super) fn random_points<P: AffineRepr>(num_points: usize, rng: &mut StdRng) -> Vec<P> {
         let mut points = Vec::new();
@@ -143,7 +145,7 @@ fn g2_add_test_vectors(num_test_vectors: usize, rng: &mut StdRng) -> Vec<Precomp
 
 /// Add benches for the BLS12-381 G1 add precompile
 pub fn add_g1_add_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
-    use revm_precompile::bls12_381::g1_add::PRECOMPILE;
+    use revm_rwasm_precompile::bls12_381::g1_add::PRECOMPILE;
 
     let mut rng = StdRng::seed_from_u64(RNG_SEED);
     let test_vectors = g1_add_test_vectors(1, &mut rng);
@@ -158,7 +160,7 @@ pub fn add_g1_add_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
 
 /// Add benches for the BLS12-381 G2 add precompile
 pub fn add_g2_add_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
-    use revm_precompile::bls12_381::g2_add::PRECOMPILE;
+    use revm_rwasm_precompile::bls12_381::g2_add::PRECOMPILE;
 
     let mut rng = StdRng::seed_from_u64(RNG_SEED);
     let test_vectors = g2_add_test_vectors(1, &mut rng);
@@ -173,7 +175,7 @@ pub fn add_g2_add_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
 
 /// Add benches for the BLS12-381 G1 msm precompile
 pub fn add_g1_msm_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
-    use revm_precompile::bls12_381::g1_msm::PRECOMPILE;
+    use revm_rwasm_precompile::bls12_381::g1_msm::PRECOMPILE;
 
     let precompile = *PRECOMPILE.precompile();
 
@@ -218,7 +220,7 @@ fn g2_msm_test_vectors(msm_size: usize, rng: &mut StdRng) -> PrecompileInput {
 
 /// Add benches for the BLS12-381 G2 msm precompile
 pub fn add_g2_msm_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
-    use revm_precompile::bls12_381::g2_msm::PRECOMPILE;
+    use revm_rwasm_precompile::bls12_381::g2_msm::PRECOMPILE;
 
     let precompile = *PRECOMPILE.precompile();
 
@@ -251,7 +253,7 @@ fn pairing_test_vectors(num_pairs: usize, rng: &mut StdRng) -> PrecompileInput {
 
 /// Add benches for the BLS12-381 pairing precompile
 pub fn add_pairing_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
-    use revm_precompile::bls12_381::pairing::PRECOMPILE;
+    use revm_rwasm_precompile::bls12_381::pairing::PRECOMPILE;
 
     let precompile = *PRECOMPILE.precompile();
 
@@ -275,7 +277,7 @@ fn map_fp_to_g1_test_vectors(rng: &mut StdRng) -> PrecompileInput {
 
 /// Add benches for the BLS12-381 map fp to g1 precompiles
 pub fn add_map_fp_to_g1_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
-    use revm_precompile::bls12_381::map_fp_to_g1::PRECOMPILE;
+    use revm_rwasm_precompile::bls12_381::map_fp_to_g1::PRECOMPILE;
 
     let mut rng = StdRng::seed_from_u64(RNG_SEED);
     let test_vector = map_fp_to_g1_test_vectors(&mut rng);
@@ -302,7 +304,7 @@ fn map_fp2_to_g2_test_vectors(rng: &mut StdRng) -> PrecompileInput {
 
 /// Add benches for the BLS12-381 map fp2 to g2 precompiles
 pub fn add_map_fp2_to_g2_benches<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
-    use revm_precompile::bls12_381::map_fp2_to_g2::PRECOMPILE;
+    use revm_rwasm_precompile::bls12_381::map_fp2_to_g2::PRECOMPILE;
 
     let mut rng = StdRng::seed_from_u64(RNG_SEED);
     let test_vector = map_fp2_to_g2_test_vectors(&mut rng);
