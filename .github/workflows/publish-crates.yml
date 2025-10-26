@@ -40,9 +40,9 @@ jobs:
             for crate in $crates; do
               echo "Publishing crate: $crate"
               cargo release publish \
+                -p "$crate" \
                 --no-verify \
                 --no-confirm \
-                --execute \
-                "$crate"
+                --execute
             done
           fi
