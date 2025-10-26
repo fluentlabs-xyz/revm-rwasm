@@ -2,7 +2,7 @@
 use criterion::{measurement::Measurement, BenchmarkGroup};
 use primitives::hex;
 use primitives::Bytes;
-use revm_precompile::bn128::{
+use revm_rwasm_precompile::bn128::{
     add::ISTANBUL_ADD_GAS_COST,
     mul::ISTANBUL_MUL_GAS_COST,
     pair::{ISTANBUL_PAIR_BASE, ISTANBUL_PAIR_PER_POINT},

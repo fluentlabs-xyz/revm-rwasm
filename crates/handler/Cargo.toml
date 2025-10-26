@@ -1,5 +1,5 @@
 [package]
-name = "revm-handler"
+name = "revm-rwasm-handler"
 description = "Revm handler crates"
 version = "8.0.3"
 authors.workspace = true
