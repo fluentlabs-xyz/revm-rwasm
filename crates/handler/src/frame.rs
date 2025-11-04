@@ -585,6 +585,7 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
             FrameData::Create(frame) => {
                 let max_code_size = context.cfg().max_code_size();
                 let is_eip3541_disabled = context.cfg().is_eip3541_disabled();
+                let legacy_bytecode_enabled = context.cfg().is_legacy_bytecode_enabled();
                 return_create(
                     context.journal_mut(),
                     self.checkpoint,
@@ -593,6 +594,7 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                     max_code_size,
                     is_eip3541_disabled,
                     spec,
+                    legacy_bytecode_enabled,
                 );
 
                 ItemOrResult::Result(FrameResult::Create(CreateOutcome::new(
@@ -698,6 +700,7 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
 }
 
 /// Handles the result of a CREATE operation, including validation and state updates.
+#[allow(clippy::too_many_arguments)]
 pub fn return_create<JOURNAL: JournalTr>(
     journal: &mut JOURNAL,
     checkpoint: JournalCheckpoint,
@@ -706,6 +709,7 @@ pub fn return_create<JOURNAL: JournalTr>(
     max_code_size: usize,
     is_eip3541_disabled: bool,
     spec_id: SpecId,
+    legacy_bytecode_enabled: bool,
 ) {
     // If return is not ok revert and return.
     if !interpreter_result.result.is_ok() {
@@ -749,8 +753,8 @@ pub fn return_create<JOURNAL: JournalTr>(
     // If we have enough gas we can commit changes.
     journal.checkpoint_commit();
 
-    // set code only if an output result is not empty
-    if !interpreter_result.output.is_empty() {
+    // set code only if legacy bytecode is enabled
+    if legacy_bytecode_enabled {
         let bytecode = Bytecode::new_legacy(interpreter_result.output.clone());
         journal.set_code(address, bytecode);
     }
@@ -801,3 +805,81 @@ pub fn return_eofcreate<JOURNAL: JournalTr>(
     journal.set_code(address, Bytecode::Eof(Arc::new(bytecode)));
 }
  */
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use context::{Journal, JournalEntry};
+    use database::InMemoryDB;
+    use primitives::Address;
+    use state::Bytecode;
+
+    type TestJournal = Journal<InMemoryDB, JournalEntry>;
+
+    #[test]
+    fn test_is_rwasm_prevents_legacy_code_overwrite() {
+        let mut journal = TestJournal::new(InMemoryDB::default());
+        let output = Bytes::from_static(&[0x60, 0x80]);
+
+        // Test 1: is_rwasm=true preserves OwnableAccount
+        let addr1 = Address::from([0xAB; 20]);
+        journal.load_account(addr1).unwrap();
+        journal.set_code(
+            addr1,
+            Bytecode::new_ownable_account(Address::ZERO, Bytes::default()),
+        );
+
+        let checkpoint1 = journal.checkpoint();
+        let mut result1 = InterpreterResult {
+            result: InstructionResult::Return,
+            output: output.clone(),
+            gas: Gas::new(1_000_000),
+        };
+
+        return_create(
+            &mut journal,
+            checkpoint1,
+            &mut result1,
+            addr1,
+            0x6000,
+            false,
+            SpecId::PRAGUE,
+            false,
+        );
+
+        let account1 = journal.load_account(addr1).unwrap();
+        let code1 = account1.info.code.as_ref().unwrap();
+        assert!(
+            matches!(code1, Bytecode::OwnableAccount(_)),
+            "OwnableAccount overwritten"
+        );
+
+        // Test 2: is_rwasm=false deploys legacy
+        let addr2 = Address::from([0xCD; 20]);
+        journal.load_account(addr2).unwrap();
+
+        let checkpoint2 = journal.checkpoint();
+        let mut result2 = InterpreterResult {
+            result: InstructionResult::Return,
+            output,
+            gas: Gas::new(1_000_000),
+        };
+
+        return_create(
+            &mut journal,
+            checkpoint2,
+            &mut result2,
+            addr2,
+            0x6000,
+            false,
+            SpecId::PRAGUE,
+            true,
+        );
+
+        let account2 = journal.load_account(addr2).unwrap();
+        let code2 = account2.info.code.as_ref().unwrap();
+        assert!(
+            matches!(code2, Bytecode::LegacyAnalyzed(_)),
+            "Legacy not deployed"
+        );
+    }
+}
