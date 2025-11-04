@@ -138,12 +138,14 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
             interpreter,
             checkpoint: checkpoint_ref,
             is_finished: is_finished_ref,
+            interrupted_outcome: interrupted_outcome_ref,
             ..
         } = self;
         *data_ref = data;
         *input_ref = input;
         *depth_ref = depth;
         *is_finished_ref = false;
+        *interrupted_outcome_ref = None;
         interpreter.clear(memory, bytecode, inputs, is_static, spec_id, gas_limit);
         *checkpoint_ref = checkpoint;
     }

@@ -126,7 +126,7 @@ walkdir = "2.5"
 
 # rwasm
 rwasm = { git = "https://github.com/fluentlabs-xyz/rwasm", branch = "devel", default-features = false }
-#rwasm = { path = "../../../rwasm", default-features = false }
+#rwasm = { path = "../rwasm", default-features = false }
 
 [workspace.package]
 license = "MIT"
