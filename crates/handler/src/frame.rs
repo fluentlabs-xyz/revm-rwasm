@@ -248,7 +248,8 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                 .info;
             bytecode = account.code.clone().unwrap_or_default();
             code_hash = account.code_hash();
-        } else if let Bytecode::OwnableAccount(ownable_account_bytecode) = bytecode {
+        }
+        if let Bytecode::OwnableAccount(ownable_account_bytecode) = bytecode {
             let account = &ctx
                 .journal_mut()
                 .load_account_code(ownable_account_bytecode.owner_address)?
