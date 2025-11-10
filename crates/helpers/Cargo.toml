@@ -1,0 +1,43 @@
+[package]
+name = "revm-helpers"
+description = "Revm helpers"
+version = "1.0.0"
+authors.workspace = true
+edition.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# alloy
+alloy-primitives = { workspace = true, features = ["rlp", "map"] }
+spin = { version = "0.10.0", default-features = false, features = ["mutex"] }
+
+# mics
+num_enum = { version = "0.7.3", default-features = false }
+
+# Optional
+serde = { workspace = true, features = ["derive", "rc"], optional = true }
+
+
+[features]
+default = ["std"]
+std = [
+    "alloy-primitives/std",
+    "serde?/std",
+    "num_enum/std"
+]
+serde = ["dep:serde", "alloy-primitives/serde"]
+
+hashbrown = ["alloy-primitives/map-hashbrown"]
+arbitrary = ["std", "alloy-primitives/arbitrary"]
+asm-keccak = ["alloy-primitives/asm-keccak"]
+rand = ["alloy-primitives/rand"]

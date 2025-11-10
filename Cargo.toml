@@ -5,6 +5,7 @@ members = [
     # libraries
     "crates/revm",
     "crates/primitives",
+    "crates/helpers",
     "crates/interpreter",
     "crates/precompile",
     "crates/database",
@@ -49,6 +50,7 @@ statetest-types = { path = "crates/statetest-types", package = "revm-statetest-t
 context = { path = "crates/context", package = "revm-context", version = "8.0.3", default-features = false }
 context-interface = { path = "crates/context/interface", package = "revm-context-interface", version = "8.0.1", default-features = false }
 handler = { path = "crates/handler", package = "revm-handler", version = "8.0.3", default-features = false }
+helpers = { path = "crates/helpers", package = "revm-helpers", version = "1.0.0", default-features = false }
 op-revm = { path = "crates/op-revm", package = "op-revm", version = "8.0.3", default-features = false }
 
 # alloy
@@ -125,8 +127,8 @@ triehash = "0.8"
 walkdir = "2.5"
 
 # rwasm
-rwasm = { git = "https://github.com/fluentlabs-xyz/rwasm", branch = "devel", default-features = false }
-#rwasm = { path = "../../../rwasm", default-features = false }
+#rwasm = { git = "https://github.com/fluentlabs-xyz/rwasm", branch = "devel", default-features = false }
+rwasm = { path = "../rwasm", default-features = false }
 
 [workspace.package]
 license = "MIT"

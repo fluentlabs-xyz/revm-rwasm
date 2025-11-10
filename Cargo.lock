@@ -1487,7 +1487,6 @@ dependencies = [
 [[package]]
 name = "cranelift-assembler-x64"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-assembler-x64-meta",
 ]
@@ -1495,7 +1494,6 @@ dependencies = [
 [[package]]
 name = "cranelift-assembler-x64-meta"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-srcgen",
 ]
@@ -1503,7 +1501,6 @@ dependencies = [
 [[package]]
 name = "cranelift-bforest"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-entity",
 ]
@@ -1511,7 +1508,6 @@ dependencies = [
 [[package]]
 name = "cranelift-bitset"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "serde",
  "serde_derive",
@@ -1520,7 +1516,6 @@ dependencies = [
 [[package]]
 name = "cranelift-codegen"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "bumpalo",
  "cranelift-assembler-x64",
@@ -1546,7 +1541,6 @@ dependencies = [
 [[package]]
 name = "cranelift-codegen-meta"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-assembler-x64-meta",
  "cranelift-codegen-shared",
@@ -1557,12 +1551,10 @@ dependencies = [
 [[package]]
 name = "cranelift-codegen-shared"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 
 [[package]]
 name = "cranelift-control"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "arbitrary",
 ]
@@ -1570,7 +1562,6 @@ dependencies = [
 [[package]]
 name = "cranelift-entity"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-bitset",
  "serde",
@@ -1580,7 +1571,6 @@ dependencies = [
 [[package]]
 name = "cranelift-frontend"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-codegen",
  "log",
@@ -1591,12 +1581,10 @@ dependencies = [
 [[package]]
 name = "cranelift-isle"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 
 [[package]]
 name = "cranelift-native"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-codegen",
  "libc",
@@ -1606,7 +1594,6 @@ dependencies = [
 [[package]]
 name = "cranelift-srcgen"
 version = "0.121.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 
 [[package]]
 name = "crc"
@@ -3920,7 +3907,6 @@ dependencies = [
 [[package]]
 name = "pulley-interpreter"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "cranelift-bitset",
  "log",
@@ -3931,7 +3917,6 @@ dependencies = [
 [[package]]
 name = "pulley-macros"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4297,6 +4282,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "revm-helpers"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "num_enum",
+ "serde",
+ "spin 0.10.0",
+]
+
+[[package]]
 name = "revm-inspector"
 version = "8.0.3"
 dependencies = [
@@ -4320,6 +4315,7 @@ dependencies = [
  "bincode 2.0.1",
  "revm-bytecode",
  "revm-context-interface",
+ "revm-helpers",
  "revm-primitives",
  "serde",
 ]
@@ -4607,8 +4603,7 @@ dependencies = [
 
 [[package]]
 name = "rwasm"
-version = "0.0.0"
-source = "git+https://github.com/fluentlabs-xyz/rwasm?branch=devel#bf9f1bf5c13bcd157aa99f3a6bde968649712c52"
+version = "0.3.2"
 dependencies = [
  "bincode 2.0.1",
  "bitvec",
@@ -4625,7 +4620,7 @@ dependencies = [
  "tiny-keccak",
  "wasmi",
  "wasmparser-nostd",
- "wasmtime",
+ "wasmtime-rwasm",
 ]
 
 [[package]]
@@ -5866,9 +5861,116 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime"
+name = "wasmtime-asm-macros"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
+name = "wasmtime-cache"
+version = "34.0.1"
+dependencies = [
+ "anyhow",
+ "base64",
+ "directories-next",
+ "log",
+ "postcard",
+ "rustix",
+ "serde",
+ "serde_derive",
+ "sha2 0.10.9",
+ "toml",
+ "windows-sys 0.59.0",
+ "zstd",
+]
+
+[[package]]
+name = "wasmtime-component-macro"
+version = "34.0.1"
+dependencies = [
+ "anyhow",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.103",
+ "wasmtime-component-util",
+ "wasmtime-wit-bindgen",
+ "wit-parser",
+]
+
+[[package]]
+name = "wasmtime-component-util"
+version = "34.0.1"
+
+[[package]]
+name = "wasmtime-environ"
+version = "34.0.1"
+dependencies = [
+ "anyhow",
+ "cpp_demangle",
+ "cranelift-bitset",
+ "cranelift-entity",
+ "gimli",
+ "indexmap 2.9.0",
+ "log",
+ "object",
+ "postcard",
+ "rustc-demangle",
+ "semver 1.0.26",
+ "serde",
+ "serde_derive",
+ "smallvec",
+ "target-lexicon",
+ "wasm-encoder 0.233.0",
+ "wasmparser 0.233.0",
+ "wasmprinter",
+ "wasmtime-component-util",
+]
+
+[[package]]
+name = "wasmtime-fiber"
+version = "34.0.1"
+dependencies = [
+ "anyhow",
+ "cc",
+ "cfg-if",
+ "libc",
+ "rustix",
+ "wasmtime-asm-macros",
+ "wasmtime-versioned-export-macros",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "wasmtime-jit-debug"
+version = "34.0.1"
+dependencies = [
+ "cc",
+ "object",
+ "rustix",
+ "wasmtime-versioned-export-macros",
+]
+
+[[package]]
+name = "wasmtime-jit-icache-coherence"
+version = "34.0.1"
+dependencies = [
+ "anyhow",
+ "cfg-if",
+ "libc",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "wasmtime-math"
+version = "34.0.1"
+dependencies = [
+ "libm",
+]
+
+[[package]]
+name = "wasmtime-rwasm"
+version = "34.0.1"
 dependencies = [
  "addr2line",
  "anyhow",
@@ -5907,12 +6009,12 @@ dependencies = [
  "wasmtime-cache",
  "wasmtime-component-macro",
  "wasmtime-component-util",
- "wasmtime-cranelift",
  "wasmtime-environ",
  "wasmtime-fiber",
  "wasmtime-jit-debug",
  "wasmtime-jit-icache-coherence",
  "wasmtime-math",
+ "wasmtime-rwasm-cranelift",
  "wasmtime-slab",
  "wasmtime-versioned-export-macros",
  "wasmtime-winch",
@@ -5921,55 +6023,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-asm-macros"
+name = "wasmtime-rwasm-cranelift"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "cfg-if",
-]
-
-[[package]]
-name = "wasmtime-cache"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "anyhow",
- "base64",
- "directories-next",
- "log",
- "postcard",
- "rustix",
- "serde",
- "serde_derive",
- "sha2 0.10.9",
- "toml",
- "windows-sys 0.59.0",
- "zstd",
-]
-
-[[package]]
-name = "wasmtime-component-macro"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "anyhow",
- "proc-macro2",
- "quote",
- "syn 2.0.103",
- "wasmtime-component-util",
- "wasmtime-wit-bindgen",
- "wit-parser",
-]
-
-[[package]]
-name = "wasmtime-component-util"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-
-[[package]]
-name = "wasmtime-cranelift"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -5993,85 +6048,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-environ"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "anyhow",
- "cpp_demangle",
- "cranelift-bitset",
- "cranelift-entity",
- "gimli",
- "indexmap 2.9.0",
- "log",
- "object",
- "postcard",
- "rustc-demangle",
- "semver 1.0.26",
- "serde",
- "serde_derive",
- "smallvec",
- "target-lexicon",
- "wasm-encoder 0.233.0",
- "wasmparser 0.233.0",
- "wasmprinter",
- "wasmtime-component-util",
-]
-
-[[package]]
-name = "wasmtime-fiber"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "anyhow",
- "cc",
- "cfg-if",
- "libc",
- "rustix",
- "wasmtime-asm-macros",
- "wasmtime-versioned-export-macros",
- "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "wasmtime-jit-debug"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "cc",
- "object",
- "rustix",
- "wasmtime-versioned-export-macros",
-]
-
-[[package]]
-name = "wasmtime-jit-icache-coherence"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "anyhow",
- "cfg-if",
- "libc",
- "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "wasmtime-math"
-version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
-dependencies = [
- "libm",
-]
-
-[[package]]
 name = "wasmtime-slab"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 
 [[package]]
 name = "wasmtime-versioned-export-macros"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6081,7 +6063,6 @@ dependencies = [
 [[package]]
 name = "wasmtime-winch"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
@@ -6089,15 +6070,14 @@ dependencies = [
  "object",
  "target-lexicon",
  "wasmparser 0.233.0",
- "wasmtime-cranelift",
  "wasmtime-environ",
+ "wasmtime-rwasm-cranelift",
  "winch-codegen",
 ]
 
 [[package]]
 name = "wasmtime-wit-bindgen"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "anyhow",
  "heck",
@@ -6195,7 +6175,6 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "winch-codegen"
 version = "34.0.1"
-source = "git+https://github.com/fluentlabs-xyz/wasmtime?branch=devel#f0c5b017d2b7d59c84999123338da7634ab0cf1f"
 dependencies = [
  "anyhow",
  "cranelift-assembler-x64",
@@ -6206,9 +6185,9 @@ dependencies = [
  "target-lexicon",
  "thiserror 2.0.12",
  "wasmparser 0.233.0",
- "wasmtime-cranelift",
  "wasmtime-environ",
  "wasmtime-math",
+ "wasmtime-rwasm-cranelift",
 ]
 
 [[package]]

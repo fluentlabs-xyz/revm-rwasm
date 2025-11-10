@@ -1,5 +1,6 @@
 use context_interface::{ContextTr, LocalContextTr};
 use core::ops::Range;
+use helpers::arena::Arena;
 use primitives::{Address, Bytes, U256};
 /// Input enum for a call.
 ///

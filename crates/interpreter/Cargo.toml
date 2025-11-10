@@ -21,6 +21,7 @@ workspace = true
 bytecode.workspace = true
 primitives.workspace = true
 context-interface.workspace = true
+helpers.workspace = true
 
 # optional
 serde = { workspace = true, features = ["derive", "rc"], optional = true }
