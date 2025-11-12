@@ -6,6 +6,8 @@ use crate::bls12_381_const::{
     PAIRING_MULTIPLIER_BASE, PAIRING_OFFSET_BASE,
 };
 use crate::{PrecompileError, PrecompileOutput, PrecompileResult, PrecompileWithAddress};
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::B256;
 use std::vec::Vec;
 
@@ -75,6 +77,6 @@ pub fn pairing(input: &[u8], gas_limit: u64) -> PrecompileResult {
 
     Ok(PrecompileOutput::new(
         required_gas,
-        B256::with_last_byte(result).into(),
+        B256::with_last_byte(result).0.into(),
     ))
 }

@@ -1,6 +1,7 @@
 use auto_impl::auto_impl;
 use context::{Cfg, LocalContextTr};
 use context_interface::ContextTr;
+use helpers::reusable_pool::global::VecU8;
 use interpreter::{CallInput, Gas, InputsImpl, InstructionResult, InterpreterResult};
 use precompile::PrecompileError;
 use precompile::{PrecompileSpecId, Precompiles};
@@ -104,7 +105,10 @@ impl<CTX: ContextTr> PrecompileProvider<CTX> for EthPrecompiles {
         let mut result = InterpreterResult {
             result: InstructionResult::Return,
             gas: Gas::new(gas_limit),
+            #[cfg(feature = "std")]
             output: Bytes::new(),
+            #[cfg(not(feature = "std"))]
+            output: VecU8::default_for_reuse(),
         };
 
         let r;
@@ -117,15 +121,25 @@ impl<CTX: ContextTr> PrecompileProvider<CTX> for EthPrecompiles {
                     &[][..]
                 }
             }
+            #[cfg(feature = "std")]
             CallInput::Bytes(bytes) => bytes.0.iter().as_slice(),
+            #[cfg(not(feature = "std"))]
+            CallInput::Bytes(bytes) => bytes.as_slice(),
         };
 
         match (*precompile)(input_bytes, gas_limit) {
-            Ok(output) => {
+            Ok(mut output) => {
                 let underflow = result.gas.record_cost(output.gas_used);
                 assert!(underflow, "Gas underflow is not possible");
                 result.result = InstructionResult::Return;
-                result.output = output.bytes;
+                #[cfg(feature = "std")]
+                {
+                    result.output = output.bytes;
+                }
+                #[cfg(not(feature = "std"))]
+                {
+                    result.output = output.bytes;
+                }
             }
             Err(PrecompileError::Fatal(e)) => return Err(e),
             Err(e) => {

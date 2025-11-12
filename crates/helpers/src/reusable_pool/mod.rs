@@ -1,17 +1,20 @@
+pub mod global;
 pub mod macroses;
 
 use core::marker::PhantomData;
 use std::vec::Vec;
 
 #[derive(Clone)]
-pub struct ReusablePoolConfig<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM)> {
+pub struct ReusablePoolConfig<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM) -> bool> {
     pub keep: usize,
     pub create: Create,
     pub reset: Reset,
     pub _phantom: PhantomData<ITEM>,
 }
 
-impl<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM)> ReusablePoolConfig<ITEM, Create, Reset> {
+impl<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM) -> bool>
+    ReusablePoolConfig<ITEM, Create, Reset>
+{
     pub fn new(keep: usize, create_behavior: Create, reset_behavior: Reset) -> Self {
         Self {
             keep,
@@ -23,12 +26,12 @@ impl<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM)> ReusablePoolConfig<ITEM, 
 }
 
 #[derive(Clone)]
-pub struct ReusablePool<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM)> {
+pub struct ReusablePool<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM) -> bool> {
     items: Vec<ITEM>,
     config: ReusablePoolConfig<ITEM, Create, Reset>,
 }
 
-impl<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM)> ReusablePool<ITEM, Create, Reset> {
+impl<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM) -> bool> ReusablePool<ITEM, Create, Reset> {
     pub fn new(config: ReusablePoolConfig<ITEM, Create, Reset>) -> Self {
         Self {
             items: Vec::with_capacity(config.keep),
@@ -47,8 +50,15 @@ impl<ITEM, Create: Fn() -> ITEM, Reset: Fn(&mut ITEM)> ReusablePool<ITEM, Create
     #[inline]
     pub fn recycle(&mut self, mut item: ITEM) {
         if self.items.len() < self.config.keep {
-            (self.config.reset)(&mut item);
-            self.items.push(item);
+            let result = (self.config.reset)(&mut item);
+            if result {
+                self.items.push(item);
+            }
         }
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.items.len()
     }
 }

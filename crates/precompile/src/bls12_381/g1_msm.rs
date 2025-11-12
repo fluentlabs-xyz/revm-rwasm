@@ -76,7 +76,7 @@ pub fn g1_msm(input: &[u8], gas_limit: u64) -> PrecompileResult {
     if g1_points.is_empty() {
         return Ok(PrecompileOutput::new(
             required_gas,
-            Bytes::from_static(&ENCODED_POINT_AT_INFINITY),
+            ENCODED_POINT_AT_INFINITY.into(),
         ));
     }
 

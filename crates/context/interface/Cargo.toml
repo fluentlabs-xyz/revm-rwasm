@@ -19,6 +19,7 @@ workspace = true
 [dependencies]
 # revm
 primitives.workspace = true
+helpers.workspace = true
 database-interface.workspace = true
 state.workspace = true
 alloy-eip7702 = { workspace = true, features = ["k256"] }
@@ -30,28 +31,28 @@ either.workspace = true
 
 # Optional
 serde = { version = "1.0", default-features = false, features = [
-	"derive",
-	"rc",
+    "derive",
+    "rc",
 ], optional = true }
 
 [features]
 default = ["std"]
 std = [
-	"serde?/std",
-	"alloy-eip7702/std",
-	"alloy-eip2930/std",
-	"database-interface/std",
-	"primitives/std",
-	"state/std",
-	"either/std",
+    "serde?/std",
+    "alloy-eip7702/std",
+    "alloy-eip2930/std",
+    "database-interface/std",
+    "primitives/std",
+    "state/std",
+    "either/std",
 ]
 serde = [
-	"dep:serde",
-	"primitives/serde",
-	"state/serde",
-	"alloy-eip7702/serde",
-	"alloy-eip2930/serde",
-	"database-interface/serde",
-	"either/serde",
+    "dep:serde",
+    "primitives/serde",
+    "state/serde",
+    "alloy-eip7702/serde",
+    "alloy-eip2930/serde",
+    "database-interface/serde",
+    "either/serde",
 ]
 serde-json = ["serde"]

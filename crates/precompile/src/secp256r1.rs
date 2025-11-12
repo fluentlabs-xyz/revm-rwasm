@@ -9,8 +9,11 @@
 use crate::{
     u64_to_address, PrecompileError, PrecompileOutput, PrecompileResult, PrecompileWithAddress,
 };
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use p256::ecdsa::{signature::hazmat::PrehashVerifier, Signature, VerifyingKey};
 use primitives::{Bytes, B256};
+use std::vec::Vec;
 
 /// Address of secp256r1 precompile.
 pub const P256VERIFY_ADDRESS: u64 = 256;
@@ -41,9 +44,16 @@ pub fn p256_verify(input: &[u8], gas_limit: u64) -> PrecompileResult {
         return Err(PrecompileError::OutOfGas);
     }
     let result = if verify_impl(input).is_some() {
-        B256::with_last_byte(1).into()
+        B256::with_last_byte(1).0.into()
     } else {
-        Bytes::new()
+        #[cfg(feature = "std")]
+        {
+            Bytes::new()
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            VecU8::default_for_reuse()
+        }
     };
     Ok(PrecompileOutput::new(P256VERIFY_BASE_GAS_FEE, result))
 }

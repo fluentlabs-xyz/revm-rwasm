@@ -24,7 +24,14 @@ pub fn sha256_run(input: &[u8], gas_limit: u64) -> PrecompileResult {
         Err(PrecompileError::OutOfGas)
     } else {
         let output = sha2::Sha256::digest(input);
-        Ok(PrecompileOutput::new(cost, output.to_vec().into()))
+        #[cfg(feature = "std")]
+        {
+            Ok(PrecompileOutput::new(cost, output.to_vec().into()))
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            Ok(PrecompileOutput::new(cost, output.as_slice().into()))
+        }
     }
 }
 
@@ -44,6 +51,6 @@ pub fn ripemd160_run(input: &[u8], gas_limit: u64) -> PrecompileResult {
 
         let mut output = [0u8; 32];
         hasher.finalize_into((&mut output[12..]).into());
-        Ok(PrecompileOutput::new(gas_used, output.to_vec().into()))
+        Ok(PrecompileOutput::new(gas_used, output.into()))
     }
 }

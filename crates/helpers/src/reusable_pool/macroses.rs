@@ -2,11 +2,16 @@
 macro_rules! define_global_reusable_pool {
     ($scope: ident, $item_typ: ty, $keep:expr, $create_strategy: expr, $reset_strategy: expr $(,)?) => {
         pub mod $scope {
+            use core::sync::atomic::AtomicUsize;
+            pub static CREATED: AtomicUsize = AtomicUsize::new(0);
+            pub static REUSED: AtomicUsize = AtomicUsize::new(0);
+            pub static RECYCLED: AtomicUsize = AtomicUsize::new(0);
+            pub const KEEP: usize = $keep;
             pub type ItemType = $item_typ;
             pub type PoolType = $crate::reusable_pool::ReusablePool<
                 ItemType,
                 fn() -> $item_typ,
-                fn(&mut $item_typ),
+                fn(&mut $item_typ) -> bool,
             >;
             pub static GLOBAL: $crate::spin::Once<$crate::spin::Mutex<PoolType>> =
                 $crate::spin::Once::new();
@@ -14,7 +19,7 @@ macro_rules! define_global_reusable_pool {
                 let pool = GLOBAL.call_once(|| {
                     $crate::spin::Mutex::new(PoolType::new(
                         $crate::reusable_pool::ReusablePoolConfig::new(
-                            $keep,
+                            KEEP,
                             $create_strategy,
                             $reset_strategy,
                         ),
@@ -22,13 +27,23 @@ macro_rules! define_global_reusable_pool {
                 });
                 pool.lock()
             }
-            pub fn pop() -> ItemType {
-                let mut pool = lock();
-                pool.reuse_or_new()
+            pub fn len() -> usize {
+                lock().len()
+            }
+            pub fn reuse_or_new() -> ItemType {
+                if len() <= 0 {
+                    CREATED.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+                } else {
+                    REUSED.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+                }
+                lock().reuse_or_new()
             }
             pub fn recycle(item: ItemType) {
-                let mut pool = lock();
-                pool.recycle(item)
+                lock().recycle(item);
+                RECYCLED.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+            }
+            pub fn take_recycle(item: &mut ItemType) {
+                recycle(core::mem::take(item))
             }
         }
     };

@@ -11,6 +11,7 @@ use context_interface::{
 };
 use core::{cmp::min, fmt::Debug};
 use derive_where::derive_where;
+use helpers::reusable_pool::global::VecU8;
 use interpreter::{
     gas,
     interpreter::{EthInterpreter, ExtBytecode},
@@ -138,12 +139,14 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
             interpreter,
             checkpoint: checkpoint_ref,
             is_finished: is_finished_ref,
+            interrupted_outcome: interrupted_outcome_ref,
             ..
         } = self;
         *data_ref = data;
         *input_ref = input;
         *depth_ref = depth;
         *is_finished_ref = false;
+        *interrupted_outcome_ref = None;
         interpreter.clear(memory, bytecode, inputs, is_static, spec_id, gas_limit);
         *checkpoint_ref = checkpoint;
     }
@@ -168,7 +171,10 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                 result: InterpreterResult {
                     result: instruction_result,
                     gas,
+                    #[cfg(feature = "std")]
                     output: Bytes::new(),
+                    #[cfg(not(feature = "std"))]
+                    output: VecU8::default_for_reuse(),
                 },
                 memory_offset: inputs.return_memory_offset.clone(),
             })))
@@ -246,7 +252,8 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                 .info;
             bytecode = account.code.clone().unwrap_or_default();
             code_hash = account.code_hash();
-        } else if let Bytecode::OwnableAccount(ownable_account_bytecode) = bytecode {
+        }
+        if let Bytecode::OwnableAccount(ownable_account_bytecode) = bytecode {
             let account = &ctx
                 .journal_mut()
                 .load_account_code(ownable_account_bytecode.owner_address)?
@@ -299,7 +306,10 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
                 result: InterpreterResult {
                     result: e,
                     gas: Gas::new(inputs.gas_limit),
+                    #[cfg(feature = "std")]
                     output: Bytes::new(),
+                    #[cfg(not(feature = "std"))]
+                    output: VecU8::default_for_reuse(),
                 },
                 address: None,
             })))
@@ -368,7 +378,10 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
             target_address: created_address,
             caller_address: inputs.caller,
             bytecode_address: None,
+            #[cfg(feature = "std")]
             input: CallInput::Bytes(Bytes::new()),
+            #[cfg(not(feature = "std"))]
+            input: CallInput::Bytes(VecU8::default_for_reuse()),
             call_value: inputs.value,
             account_owner: None,
         };
@@ -698,6 +711,7 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
 }
 
 /// Handles the result of a CREATE operation, including validation and state updates.
+#[allow(clippy::too_many_arguments)]
 pub fn return_create<JOURNAL: JournalTr>(
     journal: &mut JOURNAL,
     checkpoint: JournalCheckpoint,
@@ -743,7 +757,14 @@ pub fn return_create<JOURNAL: JournalTr>(
             interpreter_result.result = InstructionResult::OutOfGas;
             return;
         } else {
-            interpreter_result.output = Bytes::new();
+            #[cfg(feature = "std")]
+            {
+                interpreter_result.output = Bytes::new();
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                interpreter_result.output = VecU8::default_for_reuse();
+            }
         }
     }
     // If we have enough gas we can commit changes.
@@ -751,7 +772,16 @@ pub fn return_create<JOURNAL: JournalTr>(
 
     // set code only if an output result is not empty
     if !interpreter_result.output.is_empty() {
-        let bytecode = Bytecode::new_legacy(interpreter_result.output.clone());
+        let bytecode = {
+            #[cfg(feature = "std")]
+            {
+                Bytecode::new_legacy(interpreter_result.output.clone())
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                Bytecode::new_legacy(interpreter_result.output.bytes())
+            }
+        };
         journal.set_code(address, bytecode);
     }
 

@@ -1,4 +1,5 @@
 use crate::{Gas, InstructionResult, InterpreterResult};
+use helpers::reusable_pool::global::VecU8;
 use primitives::{Address, Bytes};
 
 /// Represents the outcome of a create operation in an interpreter.
@@ -55,7 +56,12 @@ impl CreateOutcome {
     /// # Returns
     ///
     /// A reference to the output [`Bytes`].
+    #[cfg(feature = "std")]
     pub fn output(&self) -> &Bytes {
+        &self.result.output
+    }
+    #[cfg(not(feature = "std"))]
+    pub fn output(&self) -> &VecU8 {
         &self.result.output
     }
 

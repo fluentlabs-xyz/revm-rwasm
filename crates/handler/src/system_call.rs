@@ -233,7 +233,7 @@ mod tests {
                 gas_used: 22143,
                 gas_refunded: 0,
                 logs: vec![],
-                output: Output::Call(Bytes::default())
+                output: Output::Call(Vec::new())
             }
         );
         // only system contract is updated and present

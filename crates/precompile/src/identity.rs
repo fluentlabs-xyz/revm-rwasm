@@ -1,4 +1,5 @@
 //! Identity precompile returns
+
 use super::calc_linear_cost_u32;
 use crate::{PrecompileError, PrecompileOutput, PrecompileResult, PrecompileWithAddress};
 use primitives::Bytes;
@@ -22,8 +23,15 @@ pub fn identity_run(input: &[u8], gas_limit: u64) -> PrecompileResult {
     if gas_used > gas_limit {
         return Err(PrecompileError::OutOfGas);
     }
-    Ok(PrecompileOutput::new(
-        gas_used,
-        Bytes::copy_from_slice(input),
-    ))
+    #[cfg(feature = "std")]
+    {
+        Ok(PrecompileOutput::new(
+            gas_used,
+            Bytes::copy_from_slice(input),
+        ))
+    }
+    #[cfg(not(feature = "std"))]
+    {
+        Ok(PrecompileOutput::new(gas_used, input.into()))
+    }
 }

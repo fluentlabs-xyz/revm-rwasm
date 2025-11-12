@@ -498,6 +498,7 @@ mod tests {
         DefaultOp, OpBuilder, OpTransaction,
     };
     use alloy_primitives::uint;
+    use helpers::reusable_pool::global::VecU8;
     use revm::{
         context::{BlockEnv, Context, TxEnv},
         context_interface::result::InvalidTransaction,
@@ -522,7 +523,10 @@ mod tests {
         let mut exec_result = FrameResult::Call(CallOutcome::new(
             InterpreterResult {
                 result: instruction_result,
+                #[cfg(feature = "std")]
                 output: Bytes::new(),
+                #[cfg(not(feature = "std"))]
+                output: VecU8::default_for_reuse(),
                 gas,
             },
             0..0,

@@ -23,6 +23,8 @@ use crate::{
     InstructionResult, InstructionTable, InterpreterAction,
 };
 use bytecode::Bytecode;
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::{hardfork::SpecId, Bytes};
 
 /// Main interpreter structure that contains all components defined in [`InterpreterTypes`].
@@ -201,7 +203,16 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
     /// Return with the given output.
     ///
     /// This will set the action to [`InterpreterAction::Return`] and set the gas to the current gas.
+    #[cfg(feature = "std")]
     pub fn return_with_output(&mut self, output: Bytes) {
+        self.bytecode.set_action(InterpreterAction::new_return(
+            InstructionResult::Return,
+            output,
+            self.gas,
+        ));
+    }
+    #[cfg(not(feature = "std"))]
+    pub fn return_with_output(&mut self, output: VecU8) {
         self.bytecode.set_action(InterpreterAction::new_return(
             InstructionResult::Return,
             output,
@@ -270,14 +281,26 @@ pub struct InterpreterResult {
     /// The result of the instruction execution.
     pub result: InstructionResult,
     /// The output of the instruction execution.
+    #[cfg(feature = "std")]
     pub output: Bytes,
+    #[cfg(not(feature = "std"))]
+    pub output: VecU8,
     /// The gas usage information.
     pub gas: Gas,
 }
 
 impl InterpreterResult {
     /// Returns a new `InterpreterResult` with the given values.
+    #[cfg(feature = "std")]
     pub fn new(result: InstructionResult, output: Bytes, gas: Gas) -> Self {
+        Self {
+            result,
+            output,
+            gas,
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    pub fn new(result: InstructionResult, output: VecU8, gas: Gas) -> Self {
         Self {
             result,
             output,
@@ -333,7 +356,6 @@ mod tests {
     fn test_interpreter_serde() {
         use super::*;
         use bytecode::Bytecode;
-        use primitives::Bytes;
 
         let bytecode = Bytecode::new_raw(Bytes::from(&[0x60, 0x00, 0x60, 0x00, 0x01][..]));
         let interpreter = Interpreter::<EthInterpreter>::new(

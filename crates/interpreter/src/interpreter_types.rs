@@ -1,7 +1,10 @@
 use crate::{CallInput, InstructionResult, InterpreterAction};
 use core::cell::Ref;
 use core::ops::{Deref, Range};
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::{hardfork::SpecId, Address, Bytes, B256, U256};
+use std::vec::Vec;
 
 /// Helper function to read immediates data from the bytecode
 pub trait Immediates {
@@ -226,6 +229,7 @@ pub trait StackTr {
 }
 
 /// Returns return data.
+#[cfg(feature = "std")]
 pub trait ReturnData {
     /// Returns return data.
     fn buffer(&self) -> &Bytes;
@@ -236,6 +240,19 @@ pub trait ReturnData {
     /// Clears return buffer.
     fn clear(&mut self) {
         self.set_buffer(Bytes::new());
+    }
+}
+#[cfg(not(feature = "std"))]
+pub trait ReturnData {
+    /// Returns return data.
+    fn buffer(&self) -> &Vec<u8>;
+
+    /// Sets return buffer.
+    fn set_buffer(&mut self, bytes: VecU8);
+
+    /// Clears return buffer.
+    fn clear(&mut self) {
+        self.set_buffer(VecU8::default_for_reuse());
     }
 }
 

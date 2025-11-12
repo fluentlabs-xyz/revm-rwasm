@@ -1,7 +1,10 @@
 use context_interface::{ContextTr, LocalContextTr};
 use core::ops::Range;
-use helpers::arena::Arena;
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::{Address, Bytes, U256};
+use std::vec::Vec;
+
 /// Input enum for a call.
 ///
 /// As CallInput uses shared memory buffer it can get overridden if not used directly when call happens.
@@ -17,7 +20,10 @@ pub enum CallInput {
     /// recommendation is to fetch buffer at first Inspector call and clone it from [`context_interface::LocalContextTr::shared_memory_buffer_slice`] function.
     SharedBuffer(Range<usize>),
     /// Bytes of the call data.
+    #[cfg(feature = "std")]
     Bytes(Bytes),
+    #[cfg(not(feature = "std"))]
+    Bytes(VecU8),
 }
 
 impl CallInput {
@@ -43,6 +49,7 @@ impl CallInput {
     ///
     /// If this `CallInput` is a `SharedBuffer`, the slice will be copied
     /// into a fresh `Bytes` buffer, which can pose a performance penalty.
+    #[cfg(feature = "std")]
     pub fn bytes<CTX>(&self, ctx: &mut CTX) -> Bytes
     where
         CTX: ContextTr,
@@ -53,6 +60,21 @@ impl CallInput {
                 .local()
                 .shared_memory_buffer_slice(range.clone())
                 .map(|b| Bytes::from(b.to_vec()))
+                .unwrap_or_default(),
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    pub fn bytes<CTX>(&self, ctx: &mut CTX) -> VecU8
+    where
+        CTX: ContextTr,
+    {
+        match self {
+            CallInput::Bytes(bytes) => bytes.clone(),
+            CallInput::SharedBuffer(range) => ctx
+                .local()
+                .shared_memory_buffer_slice(range.clone())
+                .map(|b| VecU8::try_from_slice(b.iter().as_slice()).expect("enough cap"))
                 .unwrap_or_default(),
         }
     }

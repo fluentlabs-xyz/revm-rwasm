@@ -193,11 +193,11 @@ mod tests {
         fn step(&mut self, interpreter: &mut Interpreter<INTR>, _context: &mut CTX) {
             let this_buffer = interpreter.return_data.buffer();
             let Some(buffer) = self.return_buffer.last() else {
-                self.return_buffer.push(this_buffer.clone());
+                self.return_buffer.push(this_buffer.clone().into());
                 return;
             };
             if this_buffer != buffer {
-                self.return_buffer.push(this_buffer.clone());
+                self.return_buffer.push(this_buffer.clone().into());
             }
         }
 

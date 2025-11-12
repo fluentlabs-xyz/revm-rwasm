@@ -1,8 +1,11 @@
 //! Interface for the precompiles. It contains the precompile result type,
 //! the precompile output type, and the precompile error type.
 use core::fmt;
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::Bytes;
 use std::string::String;
+use std::vec::Vec;
 
 /// A precompile operation result type
 ///
@@ -15,12 +18,20 @@ pub struct PrecompileOutput {
     /// Gas used by the precompile
     pub gas_used: u64,
     /// Output bytes
+    #[cfg(feature = "std")]
     pub bytes: Bytes,
+    #[cfg(not(feature = "std"))]
+    pub bytes: VecU8,
 }
 
 impl PrecompileOutput {
     /// Returns new precompile output with the given gas used and output bytes.
+    #[cfg(feature = "std")]
     pub fn new(gas_used: u64, bytes: Bytes) -> Self {
+        Self { gas_used, bytes }
+    }
+    #[cfg(not(feature = "std"))]
+    pub fn new(gas_used: u64, bytes: VecU8) -> Self {
         Self { gas_used, bytes }
     }
 }

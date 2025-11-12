@@ -100,7 +100,7 @@ fn template_test() {
             gas_used: 1000,
             gas_refunded: 0,
             logs: vec![],
-            output: Output::Call(Bytes::from(vec![4, 5, 6])),
+            output: Output::Call(vec![4, 5, 6]),
         },
         EvmState::default(),
     );

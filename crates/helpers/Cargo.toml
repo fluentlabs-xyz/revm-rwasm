@@ -19,7 +19,7 @@ workspace = true
 [dependencies]
 # alloy
 alloy-primitives = { workspace = true, features = ["rlp", "map"] }
-spin = { version = "0.10.0", default-features = false, features = ["mutex"] }
+spin = { version = "0.10.0", default-features = false, features = ["mutex", "spin_mutex", "once"] }
 
 # mics
 num_enum = { version = "0.7.3", default-features = false }

@@ -23,7 +23,10 @@ use crate::{
     utilities::right_pad, PrecompileError, PrecompileOutput, PrecompileResult,
     PrecompileWithAddress,
 };
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::{alloy_primitives::B512, Bytes, B256};
+use std::vec::Vec;
 
 /// `ecrecover` precompile, containing address and function to run.
 pub const ECRECOVER: PrecompileWithAddress =
@@ -41,7 +44,13 @@ pub fn ec_recover_run(input: &[u8], gas_limit: u64) -> PrecompileResult {
 
     // `v` must be a 32-byte big-endian integer equal to 27 or 28.
     if !(input[32..63].iter().all(|&b| b == 0) && matches!(input[63], 27 | 28)) {
-        return Ok(PrecompileOutput::new(ECRECOVER_BASE, Bytes::new()));
+        return Ok(PrecompileOutput::new(
+            ECRECOVER_BASE,
+            #[cfg(feature = "std")]
+            Bytes::new(),
+            #[cfg(not(feature = "std"))]
+            VecU8::default_for_reuse(),
+        ));
     }
 
     let msg = <&B256>::try_from(&input[0..32]).unwrap();
@@ -50,7 +59,7 @@ pub fn ec_recover_run(input: &[u8], gas_limit: u64) -> PrecompileResult {
 
     let res = ecrecover(sig, recid, msg);
 
-    let out = res.map(|o| o.to_vec().into()).unwrap_or_default();
+    let out = res.map(|o| o.0.into()).unwrap_or_default();
     Ok(PrecompileOutput::new(ECRECOVER_BASE, out))
 }
 

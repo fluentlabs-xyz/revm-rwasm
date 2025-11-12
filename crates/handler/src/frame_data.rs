@@ -1,5 +1,6 @@
 use context_interface::result::Output;
 use core::ops::Range;
+use helpers::reusable_pool::global::vec_u8_try_reuse_and_copy_from;
 use interpreter::{CallOutcome, CreateOutcome, Gas, InstructionResult, InterpreterResult};
 use primitives::Address;
 
@@ -55,10 +56,13 @@ impl FrameResult {
     #[inline]
     pub fn output(&self) -> Output {
         match self {
-            FrameResult::Call(outcome) => Output::Call(outcome.result.output.clone()),
-            FrameResult::Create(outcome) => {
-                Output::Create(outcome.result.output.clone(), outcome.address)
-            }
+            FrameResult::Call(outcome) => Output::Call(
+                vec_u8_try_reuse_and_copy_from(&outcome.result.output).expect("enough cap"),
+            ),
+            FrameResult::Create(outcome) => Output::Create(
+                vec_u8_try_reuse_and_copy_from(&outcome.result.output).expect("enough cap"),
+                outcome.address,
+            ),
         }
     }
 

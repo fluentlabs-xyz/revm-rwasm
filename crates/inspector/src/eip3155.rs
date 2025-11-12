@@ -197,7 +197,7 @@ impl TracerEip3155 {
         let gas_limit = context.tx().gas_limit();
         let value = Summary {
             state_root: B256::ZERO.to_string(),
-            output: result.output.to_string(),
+            output: hex::encode(&result.output),
             gas_used: gas_limit - self.gas_inspector.gas_remaining(),
             pass: result.is_ok(),
             time: None,

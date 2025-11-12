@@ -1,8 +1,11 @@
 //! BN128 precompiles added in [`EIP-1962`](https://eips.ethereum.org/EIPS/eip-1962)
+use crate::utilities::bool_to_b256;
 use crate::{
-    utilities::{bool_to_bytes32, right_pad},
-    Address, PrecompileError, PrecompileOutput, PrecompileResult, PrecompileWithAddress,
+    utilities::right_pad, Address, PrecompileError, PrecompileOutput, PrecompileResult,
+    PrecompileWithAddress,
 };
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use std::vec::Vec;
 
 cfg_if::cfg_if! {
@@ -168,7 +171,15 @@ pub fn run_add(input: &[u8], gas_cost: u64, gas_limit: u64) -> PrecompileResult 
 
     let output = encode_g1_point(result);
 
-    Ok(PrecompileOutput::new(gas_cost, output.into()))
+    Ok(
+        PrecompileOutput::new(
+            gas_cost,
+            #[cfg(feature = "std")]
+            output.into(),
+        ),
+        #[cfg(not(feature = "std"))]
+        VecU8::try_from_slice_unwrap(output),
+    )
 }
 
 /// Run the Bn128 mul precompile
@@ -244,7 +255,10 @@ pub fn run_pair(
 
     let success = pairing_check(&points);
 
-    Ok(PrecompileOutput::new(gas_used, bool_to_bytes32(success)))
+    Ok(PrecompileOutput::new(
+        gas_used,
+        bool_to_b256(success).0.into(),
+    ))
 }
 
 #[cfg(test)]

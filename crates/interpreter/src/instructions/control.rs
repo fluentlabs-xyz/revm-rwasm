@@ -4,6 +4,8 @@ use crate::{
     interpreter_types::{InterpreterTypes, Jumps, LoopControl, MemoryTr, RuntimeFlag, StackTr},
     InstructionResult, InterpreterAction,
 };
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::{Bytes, U256};
 
 use crate::InstructionContext;
@@ -62,10 +64,11 @@ pub fn pc<WIRE: InterpreterTypes, H: ?Sized>(context: InstructionContext<'_, H, 
     );
 }
 
-#[inline]
 /// Internal helper function for return operations.
 ///
 /// Handles memory data retrieval and sets the return action.
+#[inline]
+#[cfg(feature = "std")]
 fn return_inner(
     interpreter: &mut Interpreter<impl InterpreterTypes>,
     instruction_result: InstructionResult,
@@ -80,6 +83,34 @@ fn return_inner(
         let offset = as_usize_or_fail!(interpreter, offset);
         resize_memory!(interpreter, offset, len);
         output = interpreter.memory.slice_len(offset, len).to_vec().into()
+    }
+
+    interpreter
+        .bytecode
+        .set_action(InterpreterAction::new_return(
+            instruction_result,
+            output,
+            interpreter.gas,
+        ));
+}
+
+#[inline]
+#[cfg(not(feature = "std"))]
+fn return_inner(
+    interpreter: &mut Interpreter<impl InterpreterTypes>,
+    instruction_result: InstructionResult,
+) {
+    // Zero gas cost
+    // gas!(interpreter, gas::ZERO)
+    popn!([offset, len], interpreter);
+    let len = as_usize_or_fail!(interpreter, len);
+    // Important: Offset must be ignored if len is zeros
+    let mut output = VecU8::default_for_reuse();
+    if len != 0 {
+        let offset = as_usize_or_fail!(interpreter, offset);
+        resize_memory!(interpreter, offset, len);
+        output = VecU8::try_from_slice(interpreter.memory.slice_len(offset, len).iter().as_slice())
+            .expect("enough cap")
     }
 
     interpreter

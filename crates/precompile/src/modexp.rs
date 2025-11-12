@@ -5,6 +5,8 @@ use crate::{
     PrecompileError, PrecompileOutput, PrecompileResult, PrecompileWithAddress,
 };
 use core::cmp::{max, min};
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::{eip7823, Bytes, U256};
 use std::vec::Vec;
 
@@ -127,7 +129,10 @@ where
 
     // special case for both base and mod length being 0.
     if base_len == 0 && mod_len == 0 {
+        #[cfg(feature = "std")]
         return Ok(PrecompileOutput::new(min_gas, Bytes::new()));
+        #[cfg(not(feature = "std"))]
+        return Ok(PrecompileOutput::new(min_gas, VecU8::default_for_reuse()));
     }
 
     // Used to extract ADJUSTED_EXPONENT_LENGTH.
@@ -163,7 +168,10 @@ where
     // Left pad the result to modulus length. bytes will always by less or equal to modulus length.
     Ok(PrecompileOutput::new(
         gas_cost,
+        #[cfg(feature = "std")]
         left_pad_vec(&output, mod_len).into_owned().into(),
+        #[cfg(not(feature = "std"))]
+        left_pad_vec(&output, mod_len).as_ref().into(),
     ))
 }
 

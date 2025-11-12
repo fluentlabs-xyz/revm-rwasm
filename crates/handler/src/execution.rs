@@ -1,4 +1,5 @@
 use context_interface::Transaction;
+use helpers::reusable_pool::global::VecU8;
 use interpreter::{
     CallInput, CallInputs, CallScheme, CallValue, CreateInputs, CreateScheme, FrameInput,
 };
@@ -11,7 +12,10 @@ pub fn create_init_frame(tx: &impl Transaction, gas_limit: u64) -> FrameInput {
 
     match tx.kind() {
         TxKind::Call(target_address) => FrameInput::Call(Box::new(CallInputs {
+            #[cfg(feature = "std")]
             input: CallInput::Bytes(input),
+            #[cfg(not(feature = "std"))]
+            input: CallInput::Bytes(VecU8::try_from_slice(input).expect("enough cap")),
             gas_limit,
             target_address,
             bytecode_address: target_address,

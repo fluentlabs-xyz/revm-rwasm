@@ -1,6 +1,8 @@
 use crate::{Gas, InstructionResult, InterpreterResult};
 use core::ops::Range;
+use helpers::reusable_pool::global::VecU8;
 use primitives::Bytes;
+use std::vec::Vec;
 
 /// Represents the outcome of a call operation in a virtual machine.
 ///
@@ -65,7 +67,12 @@ impl CallOutcome {
     /// # Returns
     ///
     /// A reference to the output data as [`Bytes`].
+    #[cfg(feature = "std")]
     pub fn output(&self) -> &Bytes {
+        &self.result.output
+    }
+    #[cfg(not(feature = "std"))]
+    pub fn output(&self) -> &VecU8 {
         &self.result.output
     }
 

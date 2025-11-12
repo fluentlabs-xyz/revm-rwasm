@@ -8,6 +8,7 @@
 extern crate alloc as std;
 
 pub mod arena;
+#[cfg(not(feature = "std"))]
 pub mod reusable_pool;
 
 pub use spin;

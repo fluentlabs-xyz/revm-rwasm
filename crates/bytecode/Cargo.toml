@@ -19,6 +19,7 @@ workspace = true
 [dependencies]
 # revm
 primitives.workspace = true
+helpers.workspace = true
 
 # Jumpmap
 bitvec = { workspace = true, features = ["alloc"] }
@@ -38,6 +39,13 @@ rwasm = { workspace = true }
 default = ["std", "parse"]
 std = ["serde?/std", "primitives/std", "bitvec/std", "once_cell/std", "phf?/std", "rwasm/std"]
 hashbrown = ["primitives/hashbrown"]
-serde = ["dep:serde", "primitives/serde", "bitvec/serde", "phf?/serde", "rwasm/serde"]
+serde = [
+    "dep:serde",
+    "primitives/serde",
+    "bitvec/serde",
+    "phf?/serde",
+    "rwasm/serde",
+    "helpers/serde"
+]
 serde-json = ["serde"]
 parse = ["phf", "paste"]

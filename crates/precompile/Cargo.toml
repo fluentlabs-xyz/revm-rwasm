@@ -19,6 +19,7 @@ workspace = true
 [dependencies]
 # revm
 primitives.workspace = true
+helpers.workspace = true
 
 # modexp precompiles
 aurora-engine-modexp.workspace = true
@@ -31,13 +32,13 @@ once_cell = { workspace = true, features = ["alloc"] }
 # ecRecover
 k256 = { workspace = true, features = ["ecdsa"] }
 secp256k1 = { workspace = true, features = [
-	"alloc",
-	"recovery",
-	"rand",
-	"global-context",
+    "alloc",
+    "recovery",
+    "rand",
+    "global-context",
 ], optional = true }
 libsecp256k1 = { workspace = true, features = [
-	"static-context",
+    "static-context",
 ], optional = true }
 
 # SHA2-256 and RIPEMD-160
@@ -55,7 +56,7 @@ ark-serialize = { workspace = true }
 
 # KZG point evaluation precompile
 c-kzg = { workspace = true, optional = true, features = [
-	"ethereum_kzg_settings",
+    "ethereum_kzg_settings",
 ] }
 
 # Optionally use `kzg-rs` for a pure Rust implementation of KZG point evaluation.
@@ -83,23 +84,23 @@ rstest.workspace = true
 [features]
 default = ["std", "c-kzg", "secp256k1", "portable", "blst"]
 std = [
-	"primitives/std",
-	"k256/std",
-	"once_cell/std",
-	"ripemd/std",
-	"sha2/std",
-	"c-kzg?/std",
-	"secp256k1?/std",
-	"libsecp256k1?/std",
-	"ark-bn254/std",
-	"ark-bls12-381/std",
-	"aurora-engine-modexp/std",
-	"ark-ec/std",
-	"ark-ff/std",
-	"ark-serialize/std",
-	"ark-std/std",
-	"p256/std",
-	"rug?/std",
+    "primitives/std",
+    "k256/std",
+    "once_cell/std",
+    "ripemd/std",
+    "sha2/std",
+    "c-kzg?/std",
+    "secp256k1?/std",
+    "libsecp256k1?/std",
+    "ark-bn254/std",
+    "ark-bls12-381/std",
+    "aurora-engine-modexp/std",
+    "ark-ec/std",
+    "ark-ff/std",
+    "ark-serialize/std",
+    "ark-std/std",
+    "p256/std",
+    "rug?/std",
 ]
 hashbrown = ["primitives/hashbrown"]
 asm-keccak = ["primitives/asm-keccak"]

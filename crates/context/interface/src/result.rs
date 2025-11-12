@@ -9,8 +9,9 @@
 //! [`SuccessReason`] is the reason that the transaction successfully completed.
 use crate::{context::ContextError, transaction::TransactionError};
 use core::fmt::{self, Debug};
+use core::mem::take;
 use database_interface::DBErrorMarker;
-use primitives::{Address, Bytes, Log, U256};
+use primitives::{Address, Log, U256};
 use state::EvmState;
 use std::{boxed::Box, string::String, vec::Vec};
 
@@ -64,7 +65,7 @@ pub enum ExecutionResult<HaltReasonTy = HaltReason> {
         /// Gas used by the transaction.
         gas_used: u64,
         /// Output of the transaction.
-        output: Bytes,
+        output: Vec<u8>,
     },
     /// Reverted for various reasons and spend all gas
     Halt {
@@ -131,7 +132,7 @@ impl<HaltReasonTy> ExecutionResult<HaltReasonTy> {
     /// Returns the output data of the execution.
     ///
     /// Returns [`None`] if the execution was halted.
-    pub fn output(&self) -> Option<&Bytes> {
+    pub fn output(&self) -> Option<&Vec<u8>> {
         match self {
             Self::Success { output, .. } => Some(output.data()),
             Self::Revert { output, .. } => Some(output),
@@ -142,7 +143,7 @@ impl<HaltReasonTy> ExecutionResult<HaltReasonTy> {
     /// Consumes the type and returns the output data of the execution.
     ///
     /// Returns [`None`] if the execution was halted.
-    pub fn into_output(self) -> Option<Bytes> {
+    pub fn into_output(self) -> Option<Vec<u8>> {
         match self {
             Self::Success { output, .. } => Some(output.into_data()),
             Self::Revert { output, .. } => Some(output),
@@ -181,22 +182,22 @@ impl<HaltReasonTy> ExecutionResult<HaltReasonTy> {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Output {
     /// Output of a call.
-    Call(Bytes),
+    Call(Vec<u8>),
     /// Output of a create.
-    Create(Bytes, Option<Address>),
+    Create(Vec<u8>, Option<Address>),
 }
 
 impl Output {
     /// Returns the output data of the execution output.
-    pub fn into_data(self) -> Bytes {
-        match self {
-            Output::Call(data) => data,
-            Output::Create(data, _) => data,
+    pub fn into_data(mut self) -> Vec<u8> {
+        match &mut self {
+            Output::Call(data) => take(data),
+            Output::Create(data, _) => take(data),
         }
     }
 
     /// Returns the output data of the execution output.
-    pub fn data(&self) -> &Bytes {
+    pub fn data(&self) -> &Vec<u8> {
         match self {
             Output::Call(data) => data,
             Output::Create(data, _) => data,

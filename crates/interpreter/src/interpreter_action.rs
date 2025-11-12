@@ -3,14 +3,16 @@ mod call_outcome;
 mod create_inputs;
 mod create_outcome;
 
+use crate::{Gas, InstructionResult, InterpreterResult, SharedMemory};
 pub use call_inputs::{CallInput, CallInputs, CallScheme, CallValue};
 pub use call_outcome::CallOutcome;
 pub use create_inputs::CreateInputs;
 pub use create_outcome::CreateOutcome;
+#[cfg(not(feature = "std"))]
+use helpers::reusable_pool::global::VecU8;
 use primitives::{Bytes, B256};
-
-use crate::{Gas, InstructionResult, InterpreterResult, SharedMemory};
 use std::boxed::Box;
+use std::vec::Vec;
 
 /// Input data for creating a new execution frame.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -106,11 +108,23 @@ impl InterpreterAction {
 
     /// Create new halt action with the given result and gas.
     pub fn new_halt(result: InstructionResult, gas: Gas) -> Self {
-        Self::Return(InterpreterResult::new(result, Bytes::new(), gas))
+        Self::Return(InterpreterResult::new(
+            result,
+            #[cfg(feature = "std")]
+            Bytes::new(),
+            #[cfg(not(feature = "std"))]
+            VecU8::default_for_reuse(),
+            gas,
+        ))
     }
 
     /// Create new return action with the given result, output and gas.
+    #[cfg(feature = "std")]
     pub fn new_return(result: InstructionResult, output: Bytes, gas: Gas) -> Self {
+        Self::Return(InterpreterResult::new(result, output, gas))
+    }
+    #[cfg(not(feature = "std"))]
+    pub fn new_return(result: InstructionResult, output: VecU8, gas: Gas) -> Self {
         Self::Return(InterpreterResult::new(result, output, gas))
     }
 
@@ -118,7 +132,10 @@ impl InterpreterAction {
     pub fn new_stop() -> Self {
         Self::Return(InterpreterResult::new(
             InstructionResult::Stop,
+            #[cfg(feature = "std")]
             Bytes::new(),
+            #[cfg(not(feature = "std"))]
+            VecU8::default_for_reuse(),
             Gas::new(0),
         ))
     }
