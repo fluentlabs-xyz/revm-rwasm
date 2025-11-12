@@ -4,8 +4,6 @@ use crate::{
     interpreter_types::{InterpreterTypes, Jumps, LoopControl, MemoryTr, RuntimeFlag, StackTr},
     InstructionResult, InterpreterAction,
 };
-#[cfg(not(feature = "std"))]
-use helpers::reusable_pool::global::VecU8;
 use primitives::{Bytes, U256};
 
 use crate::InstructionContext;
@@ -100,6 +98,7 @@ fn return_inner(
     interpreter: &mut Interpreter<impl InterpreterTypes>,
     instruction_result: InstructionResult,
 ) {
+    use helpers::reusable_pool::global::VecU8;
     // Zero gas cost
     // gas!(interpreter, gas::ZERO)
     popn!([offset, len], interpreter);

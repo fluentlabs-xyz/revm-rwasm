@@ -1,4 +1,3 @@
-#[cfg(not(feature = "std"))]
 pub mod global;
 pub mod macroses;
 
