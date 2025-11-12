@@ -171,15 +171,13 @@ pub fn run_add(input: &[u8], gas_cost: u64, gas_limit: u64) -> PrecompileResult 
 
     let output = encode_g1_point(result);
 
-    Ok(
-        PrecompileOutput::new(
-            gas_cost,
-            #[cfg(feature = "std")]
-            output.into(),
-        ),
+    Ok(PrecompileOutput::new(
+        gas_cost,
+        #[cfg(feature = "std")]
+        output.into(),
         #[cfg(not(feature = "std"))]
         VecU8::try_from_slice_unwrap(output),
-    )
+    ))
 }
 
 /// Run the Bn128 mul precompile
