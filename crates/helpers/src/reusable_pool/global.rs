@@ -109,6 +109,10 @@ impl VecU8 {
         Self::try_from_slice(src).unwrap()
     }
 
+    pub fn is_reusable(&self) -> bool {
+        self.capacity() >= VEC_U8_REUSABLE_POOL_CAPACITY
+    }
+
     pub fn bytes(&self) -> Bytes {
         Bytes::copy_from_slice(&self)
     }
