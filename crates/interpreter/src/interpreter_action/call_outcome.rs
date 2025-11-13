@@ -68,7 +68,7 @@ impl CallOutcome {
     ///
     /// A reference to the output data as [`Bytes`].
     #[cfg(feature = "std")]
-    pub fn output(&self) -> &Bytes {
+    pub fn output(&self) -> &[u8] {
         &self.result.output
     }
     #[cfg(not(feature = "std"))]

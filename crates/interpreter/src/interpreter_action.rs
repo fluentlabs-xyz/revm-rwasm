@@ -10,6 +10,7 @@ pub use create_inputs::CreateInputs;
 pub use create_outcome::CreateOutcome;
 #[cfg(not(feature = "std"))]
 use helpers::reusable_pool::global::VecU8;
+use helpers::reusable_pool::global_types::vec_u8_or_vecu8;
 use primitives::{Bytes, B256};
 use std::boxed::Box;
 use std::vec::Vec;

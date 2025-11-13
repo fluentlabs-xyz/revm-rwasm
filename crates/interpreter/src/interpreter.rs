@@ -25,6 +25,7 @@ use crate::{
 use bytecode::Bytecode;
 #[cfg(not(feature = "std"))]
 use helpers::reusable_pool::global::VecU8;
+use helpers::reusable_pool::global_types::vec_u8_or_vecu8;
 use primitives::{hardfork::SpecId, Bytes};
 
 /// Main interpreter structure that contains all components defined in [`InterpreterTypes`].

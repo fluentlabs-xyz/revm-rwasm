@@ -4,6 +4,7 @@ use crate::{
     interpreter_types::{InterpreterTypes, Jumps, LoopControl, MemoryTr, RuntimeFlag, StackTr},
     InstructionResult, InterpreterAction,
 };
+use helpers::reusable_pool::global_types::vec_u8_or_vecu8;
 use primitives::{Bytes, U256};
 
 use crate::InstructionContext;

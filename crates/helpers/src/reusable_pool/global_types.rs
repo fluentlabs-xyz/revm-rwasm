@@ -35,7 +35,7 @@ pub mod bytes_or_vecu8 {
     }
 }
 
-pub mod bytes_or_vec_u8 {
+pub mod vec_u8_or_vecu8 {
     #[cfg(not(feature = "std"))]
     use crate::reusable_pool::global::VecU8;
     use alloy_primitives::Bytes;
@@ -44,6 +44,17 @@ pub mod bytes_or_vec_u8 {
     pub type Typ = Vec<u8>;
     #[cfg(not(feature = "std"))]
     pub type Typ = VecU8;
+
+    pub fn with_capacity(cap: usize) -> Typ {
+        #[cfg(feature = "std")]
+        {
+            Vec::with_capacity(cap)
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            VecU8::try_with_capacity(cap).expect("enough cap")
+        }
+    }
 
     pub fn copy_from_slice(bytes: &[u8]) -> Typ {
         #[cfg(feature = "std")]

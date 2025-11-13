@@ -675,9 +675,18 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
 
                 if instruction_result == InstructionResult::Revert {
                     // Save data to return data buffer if the create reverted
-                    interpreter
-                        .return_data
-                        .set_buffer(outcome.output().to_owned());
+                    #[cfg(feature = "std")]
+                    {
+                        interpreter
+                            .return_data
+                            .set_buffer(outcome.output().to_owned());
+                    }
+                    #[cfg(not(feature = "std"))]
+                    {
+                        interpreter
+                            .return_data
+                            .set_buffer(outcome.output().into().to_owned());
+                    }
                 } else {
                     // Otherwise clear it. Note that RETURN opcode should abort.
                     interpreter.return_data.clear();
