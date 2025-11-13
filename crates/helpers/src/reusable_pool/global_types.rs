@@ -1,8 +1,3 @@
-#[cfg(not(feature = "std"))]
-use crate::reusable_pool::global::VecU8;
-use alloy_primitives::Bytes;
-use std::vec::Vec;
-
 pub mod bytes_or_vecu8 {
     use crate::reusable_pool::global::VecU8;
     use alloy_primitives::Bytes;

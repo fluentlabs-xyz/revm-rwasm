@@ -3,12 +3,13 @@ use alloy_primitives::Bytes;
 use core::ops::{Deref, DerefMut};
 use std::vec::Vec;
 
-pub const VEC_U8_REUSABLE_POOL_CAPACITY: usize = 1024 * 1024;
+pub const VEC_U8_REUSABLE_POOL_COUNT: usize = 16;
+pub const VEC_U8_REUSABLE_POOL_CAPACITY: usize = 1024 * 1024 * 2;
 
 define_global_reusable_pool!(
     vec_u8_reusable_pool,
     std::vec::Vec<u8>,
-    128,
+    crate::reusable_pool::global::VEC_U8_REUSABLE_POOL_COUNT,
     || {
         std::vec::Vec::<u8>::with_capacity(
             crate::reusable_pool::global::VEC_U8_REUSABLE_POOL_CAPACITY,
