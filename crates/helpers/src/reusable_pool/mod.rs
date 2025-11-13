@@ -1,4 +1,5 @@
 pub mod global;
+pub mod global_types;
 pub mod macroses;
 
 use core::marker::PhantomData;
