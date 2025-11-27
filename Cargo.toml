@@ -126,7 +126,7 @@ walkdir = "2.5"
 
 # rwasm
 rwasm = { version = "0.3.2", default-features = false }
-#rwasm = { path = "../../../rwasm", default-features = false }
+#rwasm = { path = "../rwasm", default-features = false }
 
 [workspace.package]
 license = "MIT"
