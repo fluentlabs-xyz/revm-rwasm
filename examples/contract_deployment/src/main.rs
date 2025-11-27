@@ -11,6 +11,7 @@ use revm::{
     primitives::{hex, Bytes, StorageValue, TxKind},
     ExecuteCommitEvm, ExecuteEvm, MainBuilder, MainContext,
 };
+use revm::primitives::U256;
 
 /// Load number parameter and set to storage with slot 0
 const INIT_CODE: &[u8] = &[
@@ -92,7 +93,7 @@ fn main() -> anyhow::Result<()> {
     println!("storage U256(0) at {address}:  {storage0:#?}");
     assert_eq!(
         storage0.present_value(),
-        param.try_into()?,
+        U256::from(param),
         "{:#?}",
         output.result
     );
