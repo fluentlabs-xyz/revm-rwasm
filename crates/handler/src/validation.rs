@@ -4,8 +4,7 @@ use context_interface::{
     Block, Cfg, ContextTr,
 };
 use core::cmp;
-use interpreter::gas::{self, InitialAndFloorGas, FUEL_DENOM_RATE};
-use primitives::wasm::WASM_MAGIC_BYTES;
+use interpreter::gas::{self, InitialAndFloorGas};
 use primitives::{eip4844, hardfork::SpecId, wasm::wasm_max_code_size, B256};
 
 /// Validates the execution environment including block and transaction parameters.
@@ -287,6 +286,7 @@ pub fn validate_eip7873_initcodes(initcodes: &[Bytes]) -> Result<(), InvalidTran
 pub fn validate_initial_tx_gas(
     tx: impl Transaction,
     spec: SpecId,
+    enable_legacy_bytecode: bool,
 ) -> Result<InitialAndFloorGas, InvalidTransaction> {
     let gas = gas::calculate_initial_tx_gas_for_tx(&tx, spec);
 
@@ -298,17 +298,15 @@ pub fn validate_initial_tx_gas(
         });
     }
 
-    let mut floor_gas = gas.floor_gas;
-    if tx.input().starts_with(&WASM_MAGIC_BYTES) {
-        floor_gas /= FUEL_DENOM_RATE;
-    }
-
     // EIP-7623: Increase calldata cost
     // floor gas should be less than gas limit.
-    if spec.is_enabled_in(SpecId::PRAGUE) && floor_gas > tx.gas_limit() {
+    if enable_legacy_bytecode
+        && spec.is_enabled_in(SpecId::PRAGUE)
+        && gas.floor_gas > tx.gas_limit()
+    {
         // coming from large calldata.
         return Err(InvalidTransaction::GasFloorMoreThanGasLimit {
-            gas_floor: floor_gas,
+            gas_floor: gas.floor_gas,
             gas_limit: tx.gas_limit(),
         });
     };
