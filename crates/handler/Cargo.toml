@@ -69,3 +69,4 @@ serde = [
 
 # Deprecated, please use `serde` feature instead.
 serde-json = ["serde"]
+debug-print = []

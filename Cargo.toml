@@ -128,6 +128,10 @@ thiserror = { version = "2.0", default-features = false }
 triehash = "0.8"
 walkdir = "2.5"
 
+# rwasm
+rwasm = { git = "https://github.com/fluentlabs-xyz/rwasm", branch = "devel", default-features = false }
+#rwasm = { path = "../rwasm", default-features = false }
+
 [workspace.package]
 license = "MIT"
 authors = ["Dragan Rakita <dragan0rakita@gmail.com>"]

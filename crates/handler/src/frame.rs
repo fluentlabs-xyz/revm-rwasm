@@ -25,6 +25,7 @@ use primitives::{
     keccak256, Address, Bytes, U256,
 };
 use state::Bytecode;
+use std::fmt::Debug;
 use std::{borrow::ToOwned, boxed::Box, vec::Vec};
 
 /// Frame implementation for Ethereum.
@@ -37,7 +38,7 @@ use std::{borrow::ToOwned, boxed::Box, vec::Vec};
     <IW as InterpreterTypes>::RuntimeFlag,
     <IW as InterpreterTypes>::Extend,
 )]
-pub struct EthFrame<IW: InterpreterTypes = EthInterpreter> {
+pub struct EthFrame<IW: InterpreterTypes = EthInterpreter, EXT: Clone + Debug = ()> {
     /// Frame-specific data (Call, Create, or EOFCreate).
     pub data: FrameData,
     /// Input data for the frame.
@@ -51,20 +52,22 @@ pub struct EthFrame<IW: InterpreterTypes = EthInterpreter> {
     /// Whether the frame has been finished its execution.
     /// Frame is considered finished if it has been called and returned a result.
     pub is_finished: bool,
+    /// Info about interrupted call (for rwasm execution)
+    pub interrupted_outcome: Option<EXT>,
 }
 
-impl<IT: InterpreterTypes> FrameTr for EthFrame<IT> {
+impl<IT: InterpreterTypes, EXT: Clone + Debug> FrameTr for EthFrame<IT, EXT> {
     type FrameResult = FrameResult;
     type FrameInit = FrameInit;
 }
 
-impl Default for EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> Default for EthFrame<EthInterpreter, EXT> {
     fn default() -> Self {
         Self::do_default(Interpreter::default())
     }
 }
 
-impl EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
     /// Creates an new invalid [`EthFrame`].
     pub fn invalid() -> Self {
         Self::do_default(Interpreter::invalid())
@@ -80,7 +83,23 @@ impl EthFrame<EthInterpreter> {
             checkpoint: JournalCheckpoint::default(),
             interpreter,
             is_finished: false,
+            interrupted_outcome: None,
         }
+    }
+
+    /// Insert an interrupted outcome into the frame
+    pub fn insert_interrupted_outcome(&mut self, interrupted_outcome: EXT) {
+        self.interrupted_outcome = Some(interrupted_outcome);
+    }
+
+    /// Check is call interrupted
+    pub fn is_interrupted_call(&self) -> bool {
+        self.interrupted_outcome.is_some()
+    }
+
+    /// Take an interruption outcome
+    pub fn take_interrupted_outcome(&mut self) -> Option<EXT> {
+        self.interrupted_outcome.take()
     }
 
     /// Returns true if the frame has finished execution.
@@ -97,7 +116,7 @@ impl EthFrame<EthInterpreter> {
 /// Type alias for database errors from a context.
 pub type ContextTrDbError<CTX> = <<CTX as ContextTr>::Db as Database>::Error;
 
-impl EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
     /// Clear and initialize a frame.
     #[allow(clippy::too_many_arguments)]
     #[inline(always)]
@@ -121,11 +140,14 @@ impl EthFrame<EthInterpreter> {
             interpreter,
             checkpoint: checkpoint_ref,
             is_finished: is_finished_ref,
+            interrupted_outcome: interrupted_outcome_ref,
+            ..
         } = self;
         *data_ref = data;
         *input_ref = input;
         *depth_ref = depth;
         *is_finished_ref = false;
+        *interrupted_outcome_ref = None;
         interpreter.clear(memory, bytecode, inputs, is_static, spec_id, gas_limit);
         *checkpoint_ref = checkpoint;
     }
@@ -185,6 +207,7 @@ impl EthFrame<EthInterpreter> {
             bytecode_address: Some(inputs.bytecode_address),
             input: inputs.input.clone(),
             call_value: inputs.value.get(),
+            account_owner: None,
         };
         let is_static = inputs.is_static;
         let gas_limit = inputs.gas_limit;
@@ -329,6 +352,7 @@ impl EthFrame<EthInterpreter> {
             bytecode_address: None,
             input: CallInput::Bytes(Bytes::new()),
             call_value: inputs.value(),
+            account_owner: None,
         };
         let gas_limit = inputs.gas_limit();
 
@@ -377,7 +401,7 @@ impl EthFrame<EthInterpreter> {
     }
 }
 
-impl EthFrame<EthInterpreter> {
+impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
     /// Processes the next interpreter action, either creating a new frame or returning a result.
     pub fn process_next_action<
         CTX: ContextTr,
@@ -399,6 +423,7 @@ impl EthFrame<EthInterpreter> {
                 }));
             }
             InterpreterAction::Return(result) => result,
+            InterpreterAction::SystemInterruption { .. } => unreachable!(),
         };
 
         // Handle return from frame
@@ -418,12 +443,14 @@ impl EthFrame<EthInterpreter> {
             }
             FrameData::Create(frame) => {
                 let (cfg, journal) = context.cfg_journal_mut();
+                let legacy_bytecode_enabled = context.cfg().is_legacy_bytecode_enabled();
                 return_create(
                     journal,
                     cfg,
                     self.checkpoint,
                     &mut interpreter_result,
                     frame.created_address,
+                    legacy_bytecode_enabled,
                 );
 
                 ItemOrResult::Result(FrameResult::Create(CreateOutcome::new(
@@ -529,12 +556,14 @@ impl EthFrame<EthInterpreter> {
 }
 
 /// Handles the result of a CREATE operation, including validation and state updates.
+#[allow(clippy::too_many_arguments)]
 pub fn return_create<JOURNAL: JournalTr, CFG: Cfg>(
     journal: &mut JOURNAL,
     cfg: CFG,
     checkpoint: JournalCheckpoint,
     interpreter_result: &mut InterpreterResult,
     address: Address,
+    legacy_bytecode_enabled: bool,
 ) {
     let max_code_size = cfg.max_code_size();
     let is_eip3541_disabled = cfg.is_eip3541_disabled();
@@ -584,11 +613,12 @@ pub fn return_create<JOURNAL: JournalTr, CFG: Cfg>(
     // If we have enough gas we can commit changes.
     journal.checkpoint_commit();
 
-    // Do analysis of bytecode straight away.
-    let bytecode = Bytecode::new_legacy(interpreter_result.output.clone());
-
-    // Set code
-    journal.set_code(address, bytecode);
+    if legacy_bytecode_enabled {
+        // Do analysis of bytecode straight away.
+        let bytecode = Bytecode::new_legacy(interpreter_result.output.clone());
+        // Set code
+        journal.set_code(address, bytecode);
+    }
 
     interpreter_result.result = InstructionResult::Return;
 }

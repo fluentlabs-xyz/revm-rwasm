@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [main, "release/**"]
+    branches: [main, "release/**", v102-patched]
   pull_request:
-    branches: [main, "release/**"]
+    branches: [main, "release/**", v102-patched]
 
 env:
   CARGO_TERM_COLOR: always
@@ -99,7 +99,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgmp-dev
-      - run: cargo clippy --workspace --all-targets --all-features
+      - run: |
+          rustup component add clippy
+          cargo clippy --workspace --all-targets --all-features
         env:
           RUSTFLAGS: -Dwarnings
 

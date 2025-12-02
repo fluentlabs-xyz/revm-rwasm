@@ -75,6 +75,9 @@ pub trait Cfg {
 
     /// Returns the gas params for the EVM.
     fn gas_params(&self) -> &GasParams;
+
+    /// Returns whether legacy bytecode creation is enabled.
+    fn is_legacy_bytecode_enabled(&self) -> bool;
 }
 
 /// What bytecode analysis to perform

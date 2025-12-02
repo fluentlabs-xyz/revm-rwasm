@@ -119,7 +119,7 @@ impl<CTX: ContextTr> PrecompileProvider<CTX> for EthPrecompiles {
                         r = slice;
                         r.as_ref()
                     } else {
-                        &[]
+                        &[][..]
                     }
                 }
                 CallInput::Bytes(bytes) => bytes.0.iter().as_slice(),

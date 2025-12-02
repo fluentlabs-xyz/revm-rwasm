@@ -109,6 +109,17 @@ macro_rules! popn {
     };
 }
 
+/// Peek n records into a static array
+#[macro_export]
+macro_rules! peekn {
+    ([ $($x:ident),* ],$interpreter:expr $(,$ret:expr)? ) => {
+        let Some([$( $x ),*]) = $interpreter.stack.peekn() else {
+            $interpreter.halt($crate::InstructionResult::StackUnderflow);
+            return $($ret)?;
+        };
+    };
+}
+
 #[doc(hidden)]
 #[macro_export]
 #[collapse_debuginfo(yes)]

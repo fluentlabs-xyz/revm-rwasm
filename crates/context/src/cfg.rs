@@ -67,6 +67,10 @@ pub struct CfgEnv<SPEC = SpecId> {
     /// Introduced in Osaka in [EIP-7825: Transaction Gas Limit Cap](https://eips.ethereum.org/EIPS/eip-7825)
     /// with initials cap of 30M.
     pub tx_gas_limit_cap: Option<u64>,
+
+    /// Whether legacy bytecode creation is enabled.
+    pub legacy_bytecode_enabled: bool,
+
     /// A hard memory limit in bytes beyond which
     /// [OutOfGasError::Memory][context_interface::result::OutOfGasError::Memory] cannot be resized.
     ///
@@ -153,6 +157,7 @@ impl<SPEC> CfgEnv<SPEC> {
             tx_gas_limit_cap: None,
             blob_base_fee_update_fraction: None,
             gas_params,
+            legacy_bytecode_enabled: true,
             #[cfg(feature = "memory_limit")]
             memory_limit: (1 << 32) - 1,
             #[cfg(feature = "optional_balance_check")]
@@ -236,6 +241,12 @@ impl<SPEC> CfgEnv<SPEC> {
         self.with_spec_and_gas_params(spec.clone(), GasParams::new_spec(spec.into()))
     }
 
+    /// Sets the legacy flag to false.
+    pub fn disable_legacy_bytecode(mut self) -> Self {
+        self.legacy_bytecode_enabled = false;
+        self
+    }
+
     /// Consumes `self` and returns a new `CfgEnv` with the specified spec.
     ///
     /// Resets the gas params override function as it is generic over SPEC.
@@ -255,6 +266,7 @@ impl<SPEC> CfgEnv<SPEC> {
             max_blobs_per_tx: self.max_blobs_per_tx,
             blob_base_fee_update_fraction: self.blob_base_fee_update_fraction,
             gas_params,
+            legacy_bytecode_enabled: self.legacy_bytecode_enabled,
             #[cfg(feature = "memory_limit")]
             memory_limit: self.memory_limit,
             #[cfg(feature = "optional_balance_check")]
@@ -501,6 +513,10 @@ impl<SPEC: Into<SpecId> + Clone> Cfg for CfgEnv<SPEC> {
     #[inline]
     fn gas_params(&self) -> &GasParams {
         &self.gas_params
+    }
+
+    fn is_legacy_bytecode_enabled(&self) -> bool {
+        self.legacy_bytecode_enabled
     }
 }
 
