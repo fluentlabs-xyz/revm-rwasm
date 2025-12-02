@@ -5,7 +5,6 @@ use context_interface::{
 };
 use core::cmp;
 use interpreter::gas::{self, InitialAndFloorGas};
-use primitives::wasm::WASM_MAGIC_BYTES;
 use primitives::{eip4844, hardfork::SpecId, wasm::wasm_max_code_size, B256};
 
 /// Validates the execution environment including block and transaction parameters.
@@ -287,6 +286,7 @@ pub fn validate_eip7873_initcodes(initcodes: &[Bytes]) -> Result<(), InvalidTran
 pub fn validate_initial_tx_gas(
     tx: impl Transaction,
     spec: SpecId,
+    enable_legacy_bytecode: bool,
 ) -> Result<InitialAndFloorGas, InvalidTransaction> {
     let gas = gas::calculate_initial_tx_gas_for_tx(&tx, spec);
 
@@ -298,29 +298,15 @@ pub fn validate_initial_tx_gas(
         });
     }
 
-    let mut floor_gas = gas.floor_gas;
-
-    // Fuel denomination rate rwasm -> evm
-    // Testnet uses legacy rate (1000), correct rate is 20
-    // see more details here:
-    // https://github.com/fluentlabs-xyz/fluentbase/blob/devel/crates/types/src/lib.rs#L63
-
-    if tx.input().starts_with(&WASM_MAGIC_BYTES) {
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "fluent-testnet")] {
-                floor_gas /= 1000;
-            } else {
-                floor_gas /= 20;
-            }
-        }
-    }
-
     // EIP-7623: Increase calldata cost
     // floor gas should be less than gas limit.
-    if spec.is_enabled_in(SpecId::PRAGUE) && floor_gas > tx.gas_limit() {
+    if enable_legacy_bytecode
+        && spec.is_enabled_in(SpecId::PRAGUE)
+        && gas.floor_gas > tx.gas_limit()
+    {
         // coming from large calldata.
         return Err(InvalidTransaction::GasFloorMoreThanGasLimit {
-            gas_floor: floor_gas,
+            gas_floor: gas.floor_gas,
             gas_limit: tx.gas_limit(),
         });
     };

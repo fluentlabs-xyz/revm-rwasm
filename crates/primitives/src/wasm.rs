@@ -5,6 +5,7 @@
 pub const WASM_MAX_CODE_SIZE: usize = 0x200000;
 
 /// SVM max code size
+#[cfg(feature = "svm")]
 pub const SVM_MAX_CODE_SIZE: usize = 0x200000;
 
 /// ERC20 max code size (25kB)
@@ -21,6 +22,7 @@ pub const EVM_MAX_CODE_SIZE: usize = crate::eip170::MAX_CODE_SIZE;
 pub const WASM_MAGIC_BYTES: [u8; 4] = [0x00, 0x61, 0x73, 0x6d];
 
 /// SVM magic bytes (ELF header)
+#[cfg(feature = "svm")]
 pub const SVM_ELF_MAGIC_BYTES: [u8; 4] = [0x7f, 0x45, 0x4c, 0x46];
 
 /// ERC20 magic bytes: as char codes for "ERC" and the number 0x20
@@ -33,6 +35,7 @@ pub fn wasm_max_code_size<T: AsRef<[u8]>>(input: T) -> Option<usize> {
     let input: [u8; 4] = input.as_ref().get(0..4)?.try_into().unwrap();
     match input {
         WASM_MAGIC_BYTES => Some(WASM_MAX_CODE_SIZE),
+        #[cfg(feature = "svm")]
         SVM_ELF_MAGIC_BYTES => Some(SVM_MAX_CODE_SIZE),
         ERC20_MAGIC_BYTES => Some(ERC20_MAX_CODE_SIZE),
         _ => None,
