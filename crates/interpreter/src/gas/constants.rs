@@ -100,8 +100,3 @@ pub const INITCODE_WORD_COST: u64 = 2;
 pub const CALL_STIPEND: u64 = 2300;
 /// Minimum gas that must be provided to a callee.
 pub const MIN_CALLEE_GAS: u64 = CALL_STIPEND;
-
-/// A fuel denomination rate for rWasm vs. EVM opcodes
-///
-/// Make sure this value is synchronized with a Fluentbase version
-pub const FUEL_DENOM_RATE: u64 = 1000;
