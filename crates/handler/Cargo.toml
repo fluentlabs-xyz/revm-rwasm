@@ -30,7 +30,6 @@ bytecode.workspace = true
 
 auto_impl.workspace = true
 derive-where.workspace = true
-cfg-if.workspace = true 
 
 # Optional
 serde = { version = "1.0", default-features = false, features = [
