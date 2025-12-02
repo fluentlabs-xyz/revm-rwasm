@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [main, "release/**"]
+    branches: [main, "release/**", v102-patched]
   pull_request:
-    branches: [main, "release/**"]
+    branches: [main, "release/**", v102-patched]
 
 env:
   CARGO_TERM_COLOR: always
@@ -86,7 +86,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: cargo clippy --workspace --all-targets --all-features
+      - run: |
+          rustup component add clippy
+          cargo clippy --workspace --all-targets --all-features
         env:
           RUSTFLAGS: -Dwarnings
 

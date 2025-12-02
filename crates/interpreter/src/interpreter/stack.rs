@@ -234,6 +234,13 @@ impl Stack {
         }
     }
 
+    /// Peek N records from the top
+    #[inline]
+    pub fn peekn<const N: usize>(&self) -> Option<[U256; N]> {
+        let len = self.data.len();
+        (len >= N).then(|| core::array::from_fn(|i| self.data[len - 1 - i]))
+    }
+
     /// Duplicates the `N`th value from the top of the stack.
     ///
     /// # Panics

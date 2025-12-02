@@ -26,6 +26,9 @@ pub mod eip7907;
 pub mod hardfork;
 mod once_lock;
 
+/// An additional module for Wasm-related constants
+pub mod wasm;
+
 pub use constants::*;
 pub use once_lock::OnceLock;
 

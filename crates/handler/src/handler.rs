@@ -256,6 +256,7 @@ pub trait Handler {
             ctx.tx(),
             ctx.cfg().spec().into(),
             ctx.cfg().is_eip7623_disabled(),
+            ctx.cfg().is_legacy_bytecode_enabled(),
         )
         .map_err(From::from)
     }
@@ -305,7 +306,7 @@ pub trait Handler {
         let bytecode = if let Some(&to) = tx.kind().to() {
             let account = &journal.load_account_with_code(to)?.info;
 
-            if let Some(Bytecode::Eip7702(eip7702_bytecode)) = &account.code {
+            let bytecode = if let Some(Bytecode::Eip7702(eip7702_bytecode)) = &account.code {
                 let delegated_address = eip7702_bytecode.delegated_address;
                 let account = &journal.load_account_with_code(delegated_address)?.info;
                 Some((
@@ -317,6 +318,21 @@ pub trait Handler {
                     account.code.clone().unwrap_or_default(),
                     account.code_hash(),
                 ))
+            };
+            // A special case for ownable accounts, where we can delegate an execution to a specific
+            // runtime by replacing the final bytecode.
+            //
+            // Note: It must be executed right after EIP-7702 resolution,
+            //  otherwise account delegation won't work to EVM accounts in Fluent mode.
+            if let Some((Bytecode::OwnableAccount(ownable_bytecode), _)) = bytecode {
+                let delegated_address = ownable_bytecode.owner_address;
+                let account = &journal.load_account_with_code(delegated_address)?.info;
+                Some((
+                    account.code.clone().unwrap_or_default(),
+                    account.code_hash(),
+                ))
+            } else {
+                bytecode
             }
         } else {
             None

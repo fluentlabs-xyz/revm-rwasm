@@ -627,6 +627,40 @@ pub enum HaltReason {
     OutOfFunds,
     /// Call is too deep.
     CallTooDeep,
+
+    /* Fluentbase Halts produced by rWasm VM runtime */
+    /// Function can only be invoked as the root entry call
+    RootCallOnly,
+    /// Builtin function received malformed or invalid parameters
+    MalformedBuiltinParams,
+    /// Exceeded maximum allowed call stack depth
+    CallDepthOverflow,
+    /// Exit code must be non-negative, but a negative value was used
+    NonNegativeExitCode,
+    /// Generic catch-all error for unknown failures
+    UnknownError,
+    /// I/O operation tried to read/write outside allowed buffer bounds
+    InputOutputOutOfBounds,
+    /// Execution reached a code path marked as unreachable
+    UnreachableCodeReached,
+    /// Memory access outside the allocated memory range
+    MemoryOutOfBounds,
+    /// Table index access outside the allocated table range
+    TableOutOfBounds,
+    /// Indirect function call attempted with a null function reference
+    IndirectCallToNull,
+    /// Division or remainder by zero occurred
+    IntegerDivisionByZero,
+    /// Integer arithmetic operation overflowed the allowed range
+    IntegerOverflow,
+    /// Invalid conversion to integer (e.g., from NaN or out-of-range value)
+    BadConversionToInteger,
+    /// Function signature mismatch in a call
+    BadSignature,
+    /// Execution ran out of allocated fuel/gas
+    OutOfFuel,
+    /// Call an undefined or unregistered external function
+    UnknownExternalFunction,
 }
 
 /// Out of gas errors.

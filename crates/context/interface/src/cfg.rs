@@ -67,6 +67,9 @@ pub trait Cfg {
 
     /// Returns the limit in bytes for the memory buffer.
     fn memory_limit(&self) -> u64;
+
+    /// Returns whether legacy bytecode creation is enabled.
+    fn is_legacy_bytecode_enabled(&self) -> bool;
 }
 
 /// What bytecode analysis to perform

@@ -22,6 +22,7 @@ pub const PRECOMPILE: Precompile =
 /// Output is an encoding of multi-scalar-multiplication operation result - single G1
 /// point (`128` bytes).
 /// See also: <https://eips.ethereum.org/EIPS/eip-2537#abi-for-g1-multiexponentiation>
+#[allow(clippy::manual_is_multiple_of)]
 pub fn g1_msm(input: &[u8], gas_limit: u64) -> PrecompileResult {
     let input_len = input.len();
     if input_len == 0 || !input_len.is_multiple_of(G1_MSM_INPUT_LENGTH) {
