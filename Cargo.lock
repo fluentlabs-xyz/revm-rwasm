@@ -4423,7 +4423,8 @@ dependencies = [
 [[package]]
 name = "rwasm"
 version = "0.3.2"
-source = "git+https://github.com/fluentlabs-xyz/rwasm?branch=devel#61894b725fb6a9f31ccb237328a74e29e7b9002d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b36169175e8ed473a54baf2a23ff6cf3391c12abf12c339a18d18e4990ee3c8"
 dependencies = [
  "bincode 2.0.1",
  "bitvec",

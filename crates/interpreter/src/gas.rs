@@ -163,23 +163,6 @@ impl Gas {
         self.remaining = self.remaining.wrapping_sub(cost);
         oog
     }
-
-    /// Records the denominated fuel cost by converting the provided raw fuel cost
-    /// with a predefined fuel denomination rate (FUEL_DENOM_RATE) and logs it.
-    /// This operation does not round up due to syncing requirements between gas
-    /// and fuel rates.
-    #[inline]
-    pub fn record_denominated_cost(&mut self, fuel_cost: u64) -> bool {
-        // TODO(dmitry123): "we can't do round ceil here because we need to sync gas/fuel rates"
-        // self.record_cost((fuel_cost + FUEL_DENOM_RATE - 1) / FUEL_DENOM_RATE)
-        self.record_cost(fuel_cost / FUEL_DENOM_RATE)
-    }
-
-    /// Records a denominated fuel refund value.
-    #[inline]
-    pub fn record_denominated_refund(&mut self, fuel_refund: i64) {
-        self.record_refund(fuel_refund / FUEL_DENOM_RATE as i64)
-    }
 }
 
 /// Result of attempting to extend memory during execution.

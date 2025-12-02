@@ -70,3 +70,4 @@ serde = [
 # Deprecated, please use `serde` feature instead.
 serde-json = ["serde"]
 debug-print = []
+fluent-testnet = []  # Compatibility with Fluent testnet
