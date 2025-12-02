@@ -201,8 +201,3 @@ pub fn get_tokens_in_calldata(input: &[u8], non_zero_data_multiplier: u64) -> u6
     let non_zero_data_len = input.len() as u64 - zero_data_len;
     zero_data_len + non_zero_data_len * non_zero_data_multiplier
 }
-
-/// A fuel denomination rate for rWasm vs. EVM opcodes
-///
-/// Make sure this value is synchronized with a Fluentbase version
-pub const FUEL_DENOM_RATE: u64 = 1000;
