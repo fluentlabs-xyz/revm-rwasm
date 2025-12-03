@@ -290,7 +290,11 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         #[cfg(feature = "debug-print")]
         {
             use bytecode::OpCode;
-            let str = std::format!("- opcode: {:04X} {}", self.bytecode.pc(), OpCode::new(opcode).unwrap_or(OpCode::INVALID));
+            let str = std::format!(
+                "- opcode: {:04X} {}",
+                self.bytecode.pc(),
+                OpCode::new(opcode).unwrap_or(OpCode::INVALID)
+            );
             #[cfg(target_arch = "wasm32")]
             {
                 #[link(wasm_import_module = "fluentbase_v1preview")]
