@@ -433,9 +433,10 @@ where
     }
 }
 
-impl<EVM, ERROR> InspectorHandler for OpHandler<EVM, ERROR, EthFrame<EthInterpreter>>
+impl<EVM, ERROR> InspectorHandler<()> for OpHandler<EVM, ERROR, EthFrame<EthInterpreter>>
 where
     EVM: InspectorEvmTr<
+        (),
         Context: OpContextTr,
         Frame = EthFrame<EthInterpreter>,
         Inspector: Inspector<<<Self as Handler>::Evm as EvmTr>::Context, EthInterpreter>,

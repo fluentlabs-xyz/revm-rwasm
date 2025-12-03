@@ -146,6 +146,20 @@ impl Gas {
     #[inline]
     #[must_use = "prefer using `gas!` instead to return an out-of-gas error on failure"]
     pub fn record_cost(&mut self, cost: u64) -> bool {
+        #[cfg(feature = "debug-print")]
+        {
+            let str = std::format!("- record_cost: cost={}, remaining={}", cost, self.remaining);
+            #[cfg(target_arch = "wasm32")]
+            {
+                #[link(wasm_import_module = "fluentbase_v1preview")]
+                extern "C" {
+                    pub fn _debug_log(msg_ptr: *const u8, msg_len: u32);
+                }
+                unsafe { _debug_log(str.as_ptr(), str.len() as u32) };
+            }
+            #[cfg(feature = "std")]
+            println!("{}", str);
+        }
         if let Some(new_remaining) = self.remaining.checked_sub(cost) {
             self.remaining = new_remaining;
             return true;

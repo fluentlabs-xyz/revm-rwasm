@@ -56,7 +56,7 @@ impl<CTX, INSP, I, P> OpEvm<CTX, INSP, I, P> {
     }
 }
 
-impl<CTX, INSP, I, P> InspectorEvmTr for OpEvm<CTX, INSP, I, P>
+impl<CTX, INSP, I, P> InspectorEvmTr<()> for OpEvm<CTX, INSP, I, P>
 where
     CTX: ContextTr<Journal: JournalExt> + ContextSetters,
     I: InstructionProvider<Context = CTX, InterpreterTypes = EthInterpreter>,

@@ -163,7 +163,7 @@ impl<SPEC> CfgEnv<SPEC> {
             max_blobs_per_tx: None,
             tx_gas_limit_cap: None,
             blob_base_fee_update_fraction: None,
-            legacy_bytecode_enabled: true,
+            legacy_bytecode_enabled: false,
             #[cfg(feature = "memory_limit")]
             memory_limit: (1 << 32) - 1,
             #[cfg(feature = "optional_balance_check")]
@@ -204,8 +204,8 @@ impl<SPEC> CfgEnv<SPEC> {
     }
 
     /// Sets the legacy flag to false.
-    pub fn disable_legacy_bytecode(mut self) -> Self {
-        self.legacy_bytecode_enabled = false;
+    pub fn enable_legacy_bytecode(mut self) -> Self {
+        self.legacy_bytecode_enabled = true;
         self
     }
 

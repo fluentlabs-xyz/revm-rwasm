@@ -287,6 +287,22 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         // Get current opcode.
         let opcode = self.bytecode.opcode();
 
+        #[cfg(feature = "debug-print")]
+        {
+            use bytecode::OpCode;
+            let str = std::format!("- opcode: {:04X} {}", self.bytecode.pc(), OpCode::new(opcode).unwrap_or(OpCode::INVALID));
+            #[cfg(target_arch = "wasm32")]
+            {
+                #[link(wasm_import_module = "fluentbase_v1preview")]
+                extern "C" {
+                    pub fn _debug_log(msg_ptr: *const u8, msg_len: u32);
+                }
+                unsafe { _debug_log(str.as_ptr(), str.len() as u32) };
+            }
+            #[cfg(feature = "std")]
+            println!("{}", str);
+        }
+
         // SAFETY: In analysis we are doing padding of bytecode so that we are sure that last
         // byte instruction is STOP so we are safe to just increment program_counter bcs on last instruction
         // it will do noop and just stop execution of this contract

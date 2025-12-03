@@ -9,7 +9,7 @@ use crate::{
     gas,
     instructions::utility::IntoAddress,
     interpreter_action::FrameInput,
-    interpreter_types::{InputsTr, InterpreterTypes, LoopControl, MemoryTr, RuntimeFlag, StackTr},
+    interpreter_types::{InputsTr, InterpreterTypes, LoopControl, MemoryTr, RuntimeFlag},
     CallInput, CallInputs, CallScheme, CallValue, CreateInputs, Host, InstructionResult,
     InterpreterAction,
 };

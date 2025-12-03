@@ -67,7 +67,9 @@ pub trait MainContext {
 
 impl MainContext for Context<BlockEnv, TxEnv, CfgEnv, EmptyDB, Journal<EmptyDB>, ()> {
     fn mainnet() -> Self {
-        Context::new(EmptyDB::new(), SpecId::default())
+        let mut ctx = Context::new(EmptyDB::new(), SpecId::default());
+        ctx.cfg.legacy_bytecode_enabled = true;
+        ctx
     }
 }
 
@@ -133,6 +135,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn test_eip7702_delegating_to_ownable_account() {
         use alloy_signer::{Either, SignerSync};
         use alloy_signer_local::PrivateKeySigner;

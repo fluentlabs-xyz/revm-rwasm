@@ -4,7 +4,7 @@ use crate::{
         WARM_STORAGE_READ_COST,
     },
     interpreter::Interpreter,
-    interpreter_types::{InterpreterTypes, MemoryTr, RuntimeFlag, StackTr},
+    interpreter_types::{InterpreterTypes, MemoryTr, RuntimeFlag},
     InstructionContext,
 };
 use context_interface::{host::LoadError, Host};
@@ -169,6 +169,15 @@ pub fn load_account_delegated<H: Host + ?Sized>(
         bytecode = delegate_account.code.clone().unwrap_or_default();
         code_hash = delegate_account.code_hash();
     }
+
+    // A special case for ownable accounts, where we can delegate an execution to a specific
+    // runtime by replacing the final bytecode.
+    //
+    // Note: It must be executed right after EIP-7702 resolution,
+    //  otherwise account delegation won't work to EVM accounts in Fluent mode.
+    // if let Some(Bytecode::OwnableAccount(_code)) = &account.code {
+    //     unreachable!("revm: ownable accounts can't be resolved here");
+    // }
 
     Ok((cost, bytecode, code_hash))
 }
