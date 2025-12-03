@@ -13,9 +13,10 @@ use primitives::{Address, Bytes};
 use state::EvmState;
 
 // Implementing InspectorHandler for MainnetHandler.
-impl<EVM, ERROR> InspectorHandler for MainnetHandler<EVM, ERROR, EthFrame<EthInterpreter>>
+impl<EVM, ERROR> InspectorHandler<()> for MainnetHandler<EVM, ERROR, EthFrame<EthInterpreter>>
 where
     EVM: InspectorEvmTr<
+        (),
         Context: ContextTr<Journal: JournalTr<State = EvmState>>,
         Frame = EthFrame<EthInterpreter>,
         Inspector: Inspector<<<Self as Handler>::Evm as EvmTr>::Context, EthInterpreter>,
@@ -86,7 +87,7 @@ where
 }
 
 // Implementing InspectorEvmTr for Evm
-impl<CTX, INSP, I, P> InspectorEvmTr for Evm<CTX, INSP, I, P, EthFrame<EthInterpreter>>
+impl<CTX, INSP, I, P> InspectorEvmTr<()> for Evm<CTX, INSP, I, P, EthFrame<EthInterpreter>>
 where
     CTX: ContextTr<Journal: JournalExt> + ContextSetters,
     I: InstructionProvider<Context = CTX, InterpreterTypes = EthInterpreter>,

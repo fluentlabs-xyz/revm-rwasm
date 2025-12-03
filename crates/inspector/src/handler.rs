@@ -1,5 +1,6 @@
 use crate::{Inspector, InspectorEvmTr, JournalExt};
 use context::{result::ExecutionResult, ContextTr, JournalEntry, JournalTr, Transaction};
+use core::fmt::Debug;
 use handler::{evm::FrameTr, EvmTr, FrameResult, Handler, ItemOrResult};
 use interpreter::{
     instructions::InstructionTable,
@@ -27,10 +28,12 @@ use state::bytecode::opcode;
 /// * [`Handler::run_exec_loop`] replaced with [`InspectorHandler::inspect_run_exec_loop`]
 ///   * `run_exec_loop` calls `inspect_frame_init` and `inspect_frame_run` that call inspector inside.
 /// * [`Handler::run_system_call`] replaced with [`InspectorHandler::inspect_run_system_call`]
-pub trait InspectorHandler: Handler
+pub trait InspectorHandler<EXT: Clone + Debug>: Handler
 where
-    Self::Evm:
-        InspectorEvmTr<Inspector: Inspector<<<Self as Handler>::Evm as EvmTr>::Context, Self::IT>>,
+    Self::Evm: InspectorEvmTr<
+        EXT,
+        Inspector: Inspector<<<Self as Handler>::Evm as EvmTr>::Context, Self::IT>,
+    >,
 {
     /// The interpreter types used by this handler.
     type IT: InterpreterTypes;
