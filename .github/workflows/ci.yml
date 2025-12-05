@@ -16,7 +16,7 @@ env:
 jobs:
   test:
     name: test ${{ matrix.rust }} ${{ matrix.flags }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -38,7 +38,7 @@ jobs:
 
   check-no-std:
     name: check no_std ${{ matrix.target }} ${{ matrix.features }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -57,7 +57,7 @@ jobs:
 
   check:
     name: check ${{ matrix.features }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -70,7 +70,7 @@ jobs:
 
   feature-checks:
     name: features
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
@@ -88,7 +88,7 @@ jobs:
 
   clippy:
     name: clippy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
@@ -107,7 +107,7 @@ jobs:
 
   docs:
     name: docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
@@ -124,7 +124,7 @@ jobs:
 
   fmt:
     name: fmt
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
@@ -134,7 +134,7 @@ jobs:
       - run: cargo fmt --all --check
 
   feature-propagation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
@@ -145,7 +145,7 @@ jobs:
           time zepter run check
 
   typos:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
