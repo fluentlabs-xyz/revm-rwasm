@@ -11,7 +11,7 @@ env:
 
 jobs:
   codspeed:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-amd64-8core
     steps:
       - uses: actions/checkout@v5
         with:

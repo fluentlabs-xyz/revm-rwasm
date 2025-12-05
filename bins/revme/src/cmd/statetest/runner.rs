@@ -321,6 +321,7 @@ pub fn execute_test_suite(
             .unwrap_or(U256::ONE)
             .try_into()
             .unwrap_or(1);
+        cfg.legacy_bytecode_enabled = true;
 
         // Post and execution
         for (spec_name, tests) in &unit.post {
