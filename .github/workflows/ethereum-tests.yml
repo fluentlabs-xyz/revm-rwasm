@@ -19,6 +19,12 @@ jobs:
         profile: [ethtests, release]
         target: [i686-unknown-linux-gnu, x86_64-unknown-linux-gnu]
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: "30720"
+          remove-dotnet: "true"
+
       - name: Checkout sources
         uses: actions/checkout@v5
 
