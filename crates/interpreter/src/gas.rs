@@ -164,6 +164,20 @@ impl Gas {
     #[inline(always)]
     #[must_use = "In case of not enough gas, the interpreter should halt with an out-of-gas error"]
     pub fn record_cost_unsafe(&mut self, cost: u64) -> bool {
+        #[cfg(feature = "debug-print")]
+        {
+            let str = std::format!("- record_cost_unsafe: cost={}, remaining={}", cost, self.remaining);
+            #[cfg(target_arch = "wasm32")]
+            {
+                #[link(wasm_import_module = "fluentbase_v1preview")]
+                extern "C" {
+                    pub fn _debug_log(msg_ptr: *const u8, msg_len: u32);
+                }
+                unsafe { _debug_log(str.as_ptr(), str.len() as u32) };
+            }
+            #[cfg(feature = "std")]
+            println!("{}", str);
+        }
         let oog = self.remaining < cost;
         self.remaining = self.remaining.wrapping_sub(cost);
         oog
