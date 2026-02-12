@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [main, "release/**", v102-patched]
+    branches: [main, "release/**", v103-patched]
   pull_request:
-    branches: [main, "release/**", v102-patched]
+    branches: [main, "release/**", v103-patched]
 
 env:
   CARGO_TERM_COLOR: always

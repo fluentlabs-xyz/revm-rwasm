@@ -443,14 +443,12 @@ impl<EXT: Clone + Debug> EthFrame<EthInterpreter, EXT> {
             }
             FrameData::Create(frame) => {
                 let (cfg, journal) = context.cfg_journal_mut();
-                let legacy_bytecode_enabled = context.cfg().is_legacy_bytecode_enabled();
                 return_create(
                     journal,
                     cfg,
                     self.checkpoint,
                     &mut interpreter_result,
                     frame.created_address,
-                    legacy_bytecode_enabled,
                 );
 
                 ItemOrResult::Result(FrameResult::Create(CreateOutcome::new(
@@ -563,11 +561,11 @@ pub fn return_create<JOURNAL: JournalTr, CFG: Cfg>(
     checkpoint: JournalCheckpoint,
     interpreter_result: &mut InterpreterResult,
     address: Address,
-    legacy_bytecode_enabled: bool,
 ) {
     let max_code_size = cfg.max_code_size();
     let is_eip3541_disabled = cfg.is_eip3541_disabled();
     let spec_id = cfg.spec().into();
+    let legacy_bytecode_enabled = cfg.is_legacy_bytecode_enabled();
 
     // If return is not ok revert and return.
     if !interpreter_result.result.is_ok() {
@@ -597,8 +595,8 @@ pub fn return_create<JOURNAL: JournalTr, CFG: Cfg>(
             return;
         }
         let gas_for_code = cfg
-        .gas_params()
-        .code_deposit_cost(interpreter_result.output.len());
+            .gas_params()
+            .code_deposit_cost(interpreter_result.output.len());
         if !interpreter_result.gas.record_cost(gas_for_code) {
             // Record code deposit gas cost and check if we are out of gas.
             // EIP-2 point 3: If contract creation does not have enough gas to pay for the

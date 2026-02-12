@@ -767,6 +767,22 @@ impl fmt::Display for HaltReason {
             Self::CallNotAllowedInsideStatic => write!(f, "call not allowed inside static call"),
             Self::OutOfFunds => write!(f, "out of funds"),
             Self::CallTooDeep => write!(f, "call too deep"),
+            Self::RootCallOnly => write!(f, "root call only"),
+            Self::MalformedBuiltinParams => write!(f, "malformed builtin params"),
+            Self::CallDepthOverflow => write!(f, "call depth overflow"),
+            Self::NonNegativeExitCode => write!(f, "non negative exit code"),
+            Self::UnknownError => write!(f, "unknown error"),
+            Self::InputOutputOutOfBounds => write!(f, "input output out of bounds"),
+            Self::UnreachableCodeReached => write!(f, "unreachable code reached"),
+            Self::MemoryOutOfBounds => write!(f, "memory out of bounds"),
+            Self::TableOutOfBounds => write!(f, "table out of bounds"),
+            Self::IndirectCallToNull => write!(f, "indirect call to null"),
+            Self::IntegerDivisionByZero => write!(f, "integer division by zero"),
+            Self::IntegerOverflow => write!(f, "integer overflow"),
+            Self::BadConversionToInteger => write!(f, "bad conversion to integer"),
+            Self::BadSignature => write!(f, "bad signature"),
+            Self::OutOfFuel => write!(f, "out of fuel"),
+            Self::UnknownExternalFunction => write!(f, "unknown external function"),
         }
     }
 }
