@@ -7,7 +7,7 @@ pub use call_inputs::{CallInput, CallInputs, CallScheme, CallValue};
 pub use call_outcome::CallOutcome;
 pub use create_inputs::CreateInputs;
 pub use create_outcome::CreateOutcome;
-use primitives::{Bytes, B256};
+use primitives::{Bytes};
 
 use crate::{Gas, InstructionResult, InterpreterResult, SharedMemory};
 use std::boxed::Box;
@@ -51,16 +51,7 @@ pub enum InterpreterAction {
     /// Interpreter finished execution.
     Return(InterpreterResult),
     /// An interruption (missing shared resource, aka BALANCE, CODEHASH, etc.).
-    SystemInterruption {
-        /// A code hash of the interruption.
-        code_hash: B256,
-        /// Input bytes to be passed into the interruption handler.
-        input: Bytes,
-        /// A fuel limit assigned for this interruption.
-        fuel_limit: Option<u64>,
-        /// State of the interruption (always 0)
-        state: u32,
-    },
+    SystemInterruption,
 }
 
 impl InterpreterAction {
