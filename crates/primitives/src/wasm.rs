@@ -2,7 +2,7 @@
 ///
 /// This value is temporary for testing purposes, requires recalculation.
 /// The limit is equal to 1Mb.
-pub const WASM_MAX_CODE_SIZE: usize = 0x200000;
+pub const WASM_MAX_CODE_SIZE: usize = 0x100000;
 
 /// SVM max code size
 #[cfg(feature = "svm")]
