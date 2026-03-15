@@ -9,6 +9,8 @@ pub enum BytecodeDecodeError {
     Eip7702(Eip7702DecodeError),
     /// Metadata decode error
     OwnableAccount(OwnableAccountDecodeError),
+    /// Rwasm decode error
+    Rwasm,
 }
 
 impl From<Eip7702DecodeError> for BytecodeDecodeError {
@@ -30,6 +32,7 @@ impl fmt::Display for BytecodeDecodeError {
         match self {
             Self::Eip7702(e) => fmt::Display::fmt(e, f),
             Self::OwnableAccount(e) => fmt::Display::fmt(e, f),
+            Self::Rwasm => fmt::Display::fmt("rwasm decode error", f),
         }
     }
 }

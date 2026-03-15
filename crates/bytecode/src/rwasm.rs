@@ -20,7 +20,7 @@ pub struct RwasmBytecode {
 impl RwasmBytecode {
     /// Create new rWasm module from bytes.
     pub fn new(raw: Bytes) -> Result<Self, BytecodeDecodeError> {
-        let (module, _) = RwasmModule::new(raw.as_ref());
+        let (module, _) = RwasmModule::new_checked(raw.as_ref()).map_err(|_| BytecodeDecodeError::Rwasm)?;
         Ok(Self { module, raw })
     }
 
