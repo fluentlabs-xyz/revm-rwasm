@@ -23,17 +23,26 @@ pub struct InputsImpl {
     pub account_owner: Option<Address>,
 }
 
+impl InputsImpl {
+    /// Returns an effective bytecode address
+    pub fn effective_bytecode_address(&self) -> Address {
+        self.account_owner
+            .or_else(|| self.bytecode_address)
+            .unwrap_or_else(|| self.target_address)
+    }
+}
+
 impl InputsTr for InputsImpl {
     fn target_address(&self) -> Address {
         self.target_address
     }
 
-    fn caller_address(&self) -> Address {
-        self.caller_address
-    }
-
     fn bytecode_address(&self) -> Option<&Address> {
         self.bytecode_address.as_ref()
+    }
+
+    fn caller_address(&self) -> Address {
+        self.caller_address
     }
 
     fn input(&self) -> &CallInput {
