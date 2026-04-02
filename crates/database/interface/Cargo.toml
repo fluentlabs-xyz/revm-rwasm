@@ -1,7 +1,7 @@
 [package]
 name = "revm-rwasm-database-interface"
 description = "Revm Database interface"
-version = "9.0.0-rwasm.1"
+version = "9.0.0-rwasm.2"
 authors.workspace = true
 edition.workspace = true
 keywords.workspace = true
