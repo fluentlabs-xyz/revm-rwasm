@@ -1,7 +1,7 @@
 [package]
-name = "revm-context"
+name = "revm-rwasm-context"
 description = "Revm context crates"
-version = "13.0.0"
+version = "13.0.0-rwasm.1"
 authors.workspace = true
 edition.workspace = true
 keywords.workspace = true

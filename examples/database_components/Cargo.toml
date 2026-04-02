@@ -19,7 +19,7 @@ workspace = true
 
 [dependencies]
 # srevm 
-revm.workspace = true
+revm = { workspace = true }
 
 # misc
 auto_impl.workspace = true

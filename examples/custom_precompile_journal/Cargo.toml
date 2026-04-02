@@ -11,5 +11,5 @@ readme.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-revm = { path = "../../crates/revm", features = ["optional_eip3607"] }
+revm = { path = "../../crates/revm", package = "revm-rwasm", features = ["optional_eip3607"] }
 anyhow = "1.0"

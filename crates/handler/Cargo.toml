@@ -1,7 +1,7 @@
 [package]
-name = "revm-handler"
+name = "revm-rwasm-handler"
 description = "Revm handler crates"
-version = "15.0.0"
+version = "15.0.0-rwasm.1"
 authors.workspace = true
 edition.workspace = true
 keywords.workspace = true
@@ -70,4 +70,3 @@ serde = [
 # Deprecated, please use `serde` feature instead.
 serde-json = ["serde"]
 debug-print = []
-fluent-testnet = []  # Compatibility with Fluent testnet
