@@ -3335,7 +3335,7 @@ checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
 
 [[package]]
 name = "op-revm-rwasm"
-version = "15.0.0-rwasm.2"
+version = "15.0.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -4043,7 +4043,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm"
-version = "34.0.0-rwasm.2"
+version = "34.0.1"
 dependencies = [
  "revm-rwasm-bytecode",
  "revm-rwasm-context",
@@ -4063,7 +4063,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-bytecode"
-version = "8.0.0-rwasm.2"
+version = "8.0.1"
 dependencies = [
  "bincode",
  "bitvec",
@@ -4077,7 +4077,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-context"
-version = "13.0.0-rwasm.2"
+version = "13.0.1"
 dependencies = [
  "bitvec",
  "cfg-if",
@@ -4093,7 +4093,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-context-interface"
-version = "14.0.0-rwasm.2"
+version = "14.0.1"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702",
@@ -4107,7 +4107,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-database"
-version = "10.0.0-rwasm.2"
+version = "10.0.1"
 dependencies = [
  "alloy-eips",
  "alloy-provider",
@@ -4123,7 +4123,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-database-interface"
-version = "9.0.0-rwasm.2"
+version = "9.0.1"
 dependencies = [
  "auto_impl",
  "either",
@@ -4136,7 +4136,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-ee-tests"
-version = "0.1.0-rwasm.2"
+version = "0.1.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -4150,7 +4150,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-handler"
-version = "15.0.0-rwasm.2"
+version = "15.0.1"
 dependencies = [
  "alloy-provider",
  "alloy-signer",
@@ -4171,7 +4171,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-inspector"
-version = "15.0.0-rwasm.2"
+version = "15.0.1"
 dependencies = [
  "auto_impl",
  "either",
@@ -4188,7 +4188,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-interpreter"
-version = "32.0.0-rwasm.2"
+version = "32.0.1"
 dependencies = [
  "revm-rwasm-bytecode",
  "revm-rwasm-context-interface",
@@ -4200,7 +4200,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-precompile"
-version = "32.0.0-rwasm.2"
+version = "32.0.1"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -4228,7 +4228,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-primitives"
-version = "22.0.0-rwasm.2"
+version = "22.0.1"
 dependencies = [
  "alloy-primitives",
  "num_enum",
@@ -4238,7 +4238,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-state"
-version = "9.0.0-rwasm.2"
+version = "9.0.1"
 dependencies = [
  "alloy-eip7928",
  "bitflags",
@@ -4250,7 +4250,7 @@ dependencies = [
 
 [[package]]
 name = "revm-rwasm-statetest-types"
-version = "14.0.0-rwasm.2"
+version = "14.0.1"
 dependencies = [
  "alloy-eip7928",
  "k256",
@@ -4267,7 +4267,7 @@ dependencies = [
 
 [[package]]
 name = "revme"
-version = "11.0.0-rwasm.2"
+version = "11.0.1"
 dependencies = [
  "alloy-rlp",
  "alloy-sol-types",
