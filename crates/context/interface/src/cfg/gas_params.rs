@@ -112,7 +112,7 @@ impl GasParams {
     /// Use to override default gas cost
     ///
     /// ```rust
-    /// use revm_context_interface::cfg::gas_params::{GasParams, GasId};
+    /// use revm_rwasm_context_interface::cfg::gas_params::{GasParams, GasId};
     /// use primitives::hardfork::SpecId;
     ///
     /// let mut gas_table = GasParams::new_spec(SpecId::default());
@@ -793,7 +793,7 @@ impl GasId {
     /// # Examples
     ///
     /// ```
-    /// use revm_context_interface::cfg::gas_params::GasId;
+    /// use revm_rwasm_context_interface::cfg::gas_params::GasId;
     ///
     /// assert_eq!(GasId::exp_byte_gas().name(), "exp_byte_gas");
     /// assert_eq!(GasId::memory_linear_cost().name(), "memory_linear_cost");
@@ -866,7 +866,7 @@ impl GasId {
     /// # Examples
     ///
     /// ```
-    /// use revm_context_interface::cfg::gas_params::GasId;
+    /// use revm_rwasm_context_interface::cfg::gas_params::GasId;
     ///
     /// assert_eq!(GasId::from_name("exp_byte_gas"), Some(GasId::exp_byte_gas()));
     /// assert_eq!(GasId::from_name("memory_linear_cost"), Some(GasId::memory_linear_cost()));

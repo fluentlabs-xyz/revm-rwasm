@@ -95,6 +95,7 @@ p256 = { version = "0.13.2", default-features = false }
 bitvec = { version = "1", default-features = false }
 paste = "1.0"
 phf = { version = "0.13", default-features = false }
+bincode = { version = "2.0.1", default-features = false, features = ["alloc", "derive"] }
 
 # revme
 clap = { version = "4.5", features = ["derive"] }

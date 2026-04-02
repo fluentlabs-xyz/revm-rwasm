@@ -23,6 +23,7 @@ primitives.workspace = true
 
 # Jumpmap
 bitvec = { workspace = true, features = ["alloc"] }
+bincode = { workspace = true }
 
 # Optional
 serde = { workspace = true, features = ["derive", "rc"], optional = true }

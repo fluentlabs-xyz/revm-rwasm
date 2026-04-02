@@ -4065,6 +4065,7 @@ dependencies = [
 name = "revm-rwasm-bytecode"
 version = "8.0.0-rwasm.1"
 dependencies = [
+ "bincode",
  "bitvec",
  "paste",
  "phf",

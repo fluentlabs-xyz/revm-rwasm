@@ -24,6 +24,8 @@ pub mod utils;
 pub mod ownable_account;
 /// Rwasm constants
 pub mod rwasm;
+/// EVM Metadata and related types
+pub mod metadata;
 
 /// Re-export of bitvec crate, used to store legacy bytecode jump table.
 pub use bitvec;
