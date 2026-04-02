@@ -37,35 +37,31 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cargo publish -p revm-primitives
-          cargo search revm-primitives | head
-          cargo publish -p revm-bytecode
-          cargo search revm-bytecode | head
-          cargo publish -p revm-precompile
-          cargo search revm-precompile | head
-          cargo publish -p revm-state
-          cargo search revm-state | head
-          cargo publish -p revm-database-interface
-          cargo search revm-database-interface | head
-          cargo publish -p revm-context-interface
-          cargo search revm-context-interface | head
-          cargo publish -p revm-database
-          cargo search revm-database | head
-          cargo publish -p revm-context
-          cargo search revm-context | head
-          cargo publish -p revm-interpreter
-          cargo search revm-interpreter | head
-          cargo publish -p revm-handler
-          cargo search revm-handler | head
-          cargo publish -p revm-statetest-types
-          cargo search revm-statetest-types | head
-          cargo publish -p revm-inspector
-          cargo search revm-inspector | head
-          cargo publish -p revm
+          cargo publish -p revm-rwasm-primitives
+          cargo search revm-rwasm-primitives | head
+          cargo publish -p revm-rwasm-bytecode
+          cargo search revm-rwasm-bytecode | head
+          cargo publish -p revm-rwasm-precompile
+          cargo search revm-rwasm-precompile | head
+          cargo publish -p revm-rwasm-state
+          cargo search revm-rwasm-state | head
+          cargo publish -p revm-rwasm-database-interface
+          cargo search revm-rwasm-database-interface | head
+          cargo publish -p revm-rwasm-context-interface
+          cargo search revm-rwasm-context-interface | head
+          cargo publish -p revm-rwasm-database
+          cargo search revm-rwasm-database | head
+          cargo publish -p revm-rwasm-context
+          cargo search revm-rwasm-context | head
+          cargo publish -p revm-rwasm-interpreter
+          cargo search revm-rwasm-interpreter | head
+          cargo publish -p revm-rwasm-handler
+          cargo search revm-rwasm-handler | head
+          cargo publish -p revm-rwasm-statetest-types
+          cargo search revm-rwasm-statetest-types | head
+          cargo publish -p revm-rwasm-inspector
+          cargo search revm-rwasm-inspector | head
+          cargo publish -p revm-rwasm
           cargo search revm | head
           cargo publish -p op-revm
           cargo search op-revm | head
-          cargo publish -p revme
-          cargo search revme | head
-          cargo publish -p revm-ee-tests
-          cargo search revm-ee-tests | head
