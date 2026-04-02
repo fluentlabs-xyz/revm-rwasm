@@ -62,6 +62,6 @@ jobs:
           cargo publish -p revm-rwasm-inspector
           cargo search revm-rwasm-inspector | head
           cargo publish -p revm-rwasm
-          cargo search revm | head
-          cargo publish -p op-revm
-          cargo search op-revm | head
+          cargo search revm-rwasm | head
+          cargo publish -p op-revm-rwasm
+          cargo search op-revm-rwasm | head
