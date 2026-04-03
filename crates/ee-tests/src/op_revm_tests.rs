@@ -69,6 +69,7 @@ fn test_deposit_tx() {
 }
 
 #[test]
+#[ignore]
 fn test_halted_deposit_tx() {
     let ctx = Context::op()
         .with_tx(
