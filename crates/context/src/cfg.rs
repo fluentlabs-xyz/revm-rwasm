@@ -388,12 +388,14 @@ impl<SPEC: Into<SpecId> + Clone> Cfg for CfgEnv<SPEC> {
 
     #[inline]
     fn tx_gas_limit_cap(&self) -> u64 {
-        self.tx_gas_limit_cap
-            .unwrap_or(if self.spec.clone().into().is_enabled_in(SpecId::OSAKA) {
-                eip7825::TX_GAS_LIMIT_CAP
-            } else {
-                u64::MAX
-            })
+        // self.tx_gas_limit_cap
+        //     .unwrap_or(if self.spec.clone().into().is_enabled_in(SpecId::OSAKA) {
+        //         eip7825::TX_GAS_LIMIT_CAP
+        //     } else {
+        //         u64::MAX
+        //     })
+        // Note: Tx gas cap is not supported on Fluent
+        u64::MAX
     }
 
     #[inline]
