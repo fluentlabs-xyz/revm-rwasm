@@ -83,7 +83,7 @@ fn test_halted_deposit_tx() {
                 .source_hash(revm::primitives::B256::from([1u8; 32]))
                 .build_fill(),
         )
-        .with_cfg(CfgEnv::new_with_spec(OpSpecId::HOLOCENE))
+        .with_cfg(CfgEnv::new_with_spec(OpSpecId::HOLOCENE).enable_legacy_bytecode())
         .with_db(BenchmarkDB::new_bytecode(Bytecode::new_legacy(
             [opcode::POP].into(),
         )));
@@ -98,7 +98,7 @@ fn test_halted_deposit_tx() {
         output.result,
         ExecutionResult::Halt {
             reason: OpHaltReason::FailedDeposit,
-            gas: ResultGas::default().with_total_gas_spent(eip7825::TX_GAS_LIMIT_CAP),
+            gas: ResultGas::default().with_total_gas_spent(eip7825::LEGACY_TX_GAS_LIMIT_CAP),
             logs: vec![],
         }
     );

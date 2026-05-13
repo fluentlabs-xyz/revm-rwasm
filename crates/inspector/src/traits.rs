@@ -19,9 +19,9 @@ use crate::{
 /// It contains execution of interpreter with [`crate::Inspector`] calls [`crate::Inspector::step`] and [`crate::Inspector::step_end`] calls.
 ///
 /// It is used inside [`crate::InspectorHandler`] to extend evm with support for inspection.
-pub trait InspectorEvmTr:
+pub trait InspectorEvmTr<EXT: Clone + core::fmt::Debug>:
     EvmTr<
-    Frame: InspectorFrame<IT = EthInterpreter>,
+    Frame: InspectorFrame<EXT, IT = EthInterpreter>,
     Instructions: InstructionProvider<InterpreterTypes = EthInterpreter, Context = Self::Context>,
     Context: ContextTr<Journal: JournalExt>,
 >
@@ -96,10 +96,13 @@ pub trait InspectorEvmTr:
 
     /// Initializes the frame for the given frame input. Frame is pushed to the frame stack.
     #[inline]
-    fn inspect_frame_init(
-        &mut self,
+    fn inspect_frame_init<'a>(
+        &'a mut self,
         mut frame_init: <Self::Frame as FrameTr>::FrameInit,
-    ) -> Result<FrameInitResult<'_, Self::Frame>, ContextDbError<Self::Context>> {
+    ) -> Result<FrameInitResult<'a, Self::Frame>, ContextDbError<Self::Context>>
+    where
+        <Self as InspectorEvmTr<EXT>>::Inspector: 'a,
+    {
         let (ctx, inspector) = self.ctx_inspector();
         if let Some(mut output) = frame_start(ctx, inspector, &mut frame_init.frame_input) {
             frame_end(ctx, inspector, &frame_init.frame_input, &mut output);
@@ -171,7 +174,9 @@ pub trait InspectorEvmTr:
 }
 
 /// Trait that extends the [`FrameTr`] trait with additional functionality that is needed for inspection.
-pub trait InspectorFrame: FrameTr<FrameResult = FrameResult, FrameInit = FrameInit> {
+pub trait InspectorFrame<EXT: Clone + core::fmt::Debug>:
+    FrameTr<FrameResult = FrameResult, FrameInit = FrameInit>
+{
     /// The interpreter types used by this frame.
     type IT: InterpreterTypes;
 
@@ -179,14 +184,14 @@ pub trait InspectorFrame: FrameTr<FrameResult = FrameResult, FrameInit = FrameIn
     ///
     /// If this frame does not have support for tracing (does not contain
     /// the EthFrame) Inspector calls for this frame will be skipped.
-    fn eth_frame(&mut self) -> Option<&mut EthFrame<EthInterpreter>>;
+    fn eth_frame(&mut self) -> Option<&mut EthFrame<EthInterpreter, EXT>>;
 }
 
 /// Impl InspectorFrame for EthFrame.
-impl InspectorFrame for EthFrame<EthInterpreter> {
+impl<EXT: Clone + core::fmt::Debug> InspectorFrame<EXT> for EthFrame<EthInterpreter, EXT> {
     type IT = EthInterpreter;
 
-    fn eth_frame(&mut self) -> Option<&mut EthFrame<EthInterpreter>> {
+    fn eth_frame(&mut self) -> Option<&mut EthFrame<EthInterpreter, EXT>> {
         Some(self)
     }
 }

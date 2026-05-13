@@ -83,6 +83,42 @@ pub enum InstructionResult {
     FatalExternalError,
     /// Invalid encoding of an instruction's immediate operand.
     InvalidImmediateEncoding,
+
+    // Fluentbase Error Codes
+    /// Function can only be invoked as the root entry call
+    RootCallOnly = 0x80,
+    /// Builtin function received malformed or invalid parameters
+    MalformedBuiltinParams,
+    /// Exceeded maximum allowed call stack depth
+    CallDepthOverflow,
+    /// Exit code must be non-negative, but a negative value was used
+    NonNegativeExitCode,
+    /// Generic catch-all error for unknown failures
+    UnknownError,
+    /// I/O operation tried to read/write outside allowed buffer bounds
+    InputOutputOutOfBounds,
+
+    // rWasm Trap Codes
+    /// Execution reached a code path marked as unreachable
+    UnreachableCodeReached = 0x90,
+    /// Memory access outside the allocated memory range
+    MemoryOutOfBounds,
+    /// Table index access outside the allocated table range
+    TableOutOfBounds,
+    /// Indirect function call attempted with a null function reference
+    IndirectCallToNull,
+    /// Division or remainder by zero occurred
+    IntegerDivisionByZero,
+    /// Integer arithmetic operation overflowed the allowed range
+    IntegerOverflow,
+    /// Invalid conversion to integer (e.g., from NaN or out-of-range value)
+    BadConversionToInteger,
+    /// Function signature mismatch in a call
+    BadSignature,
+    /// Execution ran out of allocated fuel/gas
+    OutOfFuel,
+    /// Call an undefined or unregistered external function
+    UnknownExternalFunction,
 }
 
 impl From<TransferError> for InstructionResult {
@@ -135,6 +171,24 @@ impl From<HaltReason> for InstructionResult {
             HaltReason::CallNotAllowedInsideStatic => Self::CallNotAllowedInsideStatic,
             HaltReason::OutOfFunds => Self::OutOfFunds,
             HaltReason::CallTooDeep => Self::CallTooDeep,
+
+            // Fluentbase error codes
+            HaltReason::RootCallOnly => Self::RootCallOnly,
+            HaltReason::MalformedBuiltinParams => Self::MalformedBuiltinParams,
+            HaltReason::CallDepthOverflow => Self::CallDepthOverflow,
+            HaltReason::NonNegativeExitCode => Self::NonNegativeExitCode,
+            HaltReason::UnknownError => Self::UnknownError,
+            HaltReason::InputOutputOutOfBounds => Self::InputOutputOutOfBounds,
+            HaltReason::UnreachableCodeReached => Self::UnreachableCodeReached,
+            HaltReason::MemoryOutOfBounds => Self::MemoryOutOfBounds,
+            HaltReason::TableOutOfBounds => Self::TableOutOfBounds,
+            HaltReason::IndirectCallToNull => Self::IndirectCallToNull,
+            HaltReason::IntegerDivisionByZero => Self::IntegerDivisionByZero,
+            HaltReason::IntegerOverflow => Self::IntegerOverflow,
+            HaltReason::BadConversionToInteger => Self::BadConversionToInteger,
+            HaltReason::BadSignature => Self::BadSignature,
+            HaltReason::OutOfFuel => Self::OutOfFuel,
+            HaltReason::UnknownExternalFunction => Self::UnknownExternalFunction,
         }
     }
 }
@@ -193,6 +247,22 @@ macro_rules! return_error {
             | $crate::InstructionResult::CreateInitCodeSizeLimit
             | $crate::InstructionResult::FatalExternalError
             | $crate::InstructionResult::InvalidImmediateEncoding
+            | $crate::InstructionResult::RootCallOnly
+            | $crate::InstructionResult::MalformedBuiltinParams
+            | $crate::InstructionResult::CallDepthOverflow
+            | $crate::InstructionResult::NonNegativeExitCode
+            | $crate::InstructionResult::UnknownError
+            | $crate::InstructionResult::InputOutputOutOfBounds
+            | $crate::InstructionResult::UnreachableCodeReached
+            | $crate::InstructionResult::MemoryOutOfBounds
+            | $crate::InstructionResult::TableOutOfBounds
+            | $crate::InstructionResult::IndirectCallToNull
+            | $crate::InstructionResult::IntegerDivisionByZero
+            | $crate::InstructionResult::IntegerOverflow
+            | $crate::InstructionResult::BadConversionToInteger
+            | $crate::InstructionResult::BadSignature
+            | $crate::InstructionResult::OutOfFuel
+            | $crate::InstructionResult::UnknownExternalFunction
     };
 }
 
@@ -353,6 +423,43 @@ impl<HaltReasonTr: From<HaltReason>> From<InstructionResult> for SuccessOrHalt<H
             }
             InstructionResult::InvalidImmediateEncoding => {
                 Self::Halt(HaltReason::OpcodeNotFound.into())
+            }
+            // Fluentbase error codes
+            InstructionResult::RootCallOnly => Self::Halt(HaltReason::RootCallOnly.into()),
+            InstructionResult::MalformedBuiltinParams => {
+                Self::Halt(HaltReason::MalformedBuiltinParams.into())
+            }
+            InstructionResult::CallDepthOverflow => {
+                Self::Halt(HaltReason::CallDepthOverflow.into())
+            }
+            InstructionResult::NonNegativeExitCode => {
+                Self::Halt(HaltReason::NonNegativeExitCode.into())
+            }
+            InstructionResult::UnknownError => Self::Halt(HaltReason::UnknownError.into()),
+            InstructionResult::InputOutputOutOfBounds => {
+                Self::Halt(HaltReason::InputOutputOutOfBounds.into())
+            }
+            InstructionResult::UnreachableCodeReached => {
+                Self::Halt(HaltReason::UnreachableCodeReached.into())
+            }
+            InstructionResult::MemoryOutOfBounds => {
+                Self::Halt(HaltReason::MemoryOutOfBounds.into())
+            }
+            InstructionResult::TableOutOfBounds => Self::Halt(HaltReason::TableOutOfBounds.into()),
+            InstructionResult::IndirectCallToNull => {
+                Self::Halt(HaltReason::IndirectCallToNull.into())
+            }
+            InstructionResult::IntegerDivisionByZero => {
+                Self::Halt(HaltReason::IntegerDivisionByZero.into())
+            }
+            InstructionResult::IntegerOverflow => Self::Halt(HaltReason::IntegerOverflow.into()),
+            InstructionResult::BadConversionToInteger => {
+                Self::Halt(HaltReason::BadConversionToInteger.into())
+            }
+            InstructionResult::BadSignature => Self::Halt(HaltReason::BadSignature.into()),
+            InstructionResult::OutOfFuel => Self::Halt(HaltReason::OutOfFuel.into()),
+            InstructionResult::UnknownExternalFunction => {
+                Self::Halt(HaltReason::UnknownExternalFunction.into())
             }
         }
     }

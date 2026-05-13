@@ -1,6 +1,6 @@
 use crate::{
     interpreter::Interpreter,
-    interpreter_types::{InterpreterTypes, MemoryTr, RuntimeFlag, StackTr},
+    interpreter_types::{InterpreterTypes, MemoryTr, RuntimeFlag},
     InstructionContext,
 };
 use context_interface::{cfg::GasParams, host::LoadError, Host};

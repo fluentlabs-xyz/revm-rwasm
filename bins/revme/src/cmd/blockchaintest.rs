@@ -697,6 +697,7 @@ fn execute_blockchain_test(
     let spec_id = fork_to_spec_id(test_case.network);
     let mut cfg = CfgEnv::default();
     cfg.set_spec_and_mainnet_gas_params(spec_id);
+    cfg.legacy_bytecode_enabled = true;
 
     // Genesis block is not used yet.
     let mut parent_block_hash = Some(test_case.genesis_block_header.hash);

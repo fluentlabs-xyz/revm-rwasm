@@ -19,6 +19,11 @@ mod legacy;
 pub mod opcode;
 pub mod utils;
 
+/// Ownable account
+pub mod ownable_account;
+/// Rwasm constants
+pub mod rwasm;
+
 /// Re-export of bitvec crate, used to store legacy bytecode jump table.
 pub use bitvec;
 pub use bytecode::{Bytecode, BytecodeKind};

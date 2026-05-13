@@ -266,7 +266,7 @@ impl TxEnvBuilder {
         Self {
             tx_type: None,
             caller: Address::default(),
-            gas_limit: eip7825::TX_GAS_LIMIT_CAP,
+            gas_limit: eip7825::LEGACY_TX_GAS_LIMIT_CAP,
             gas_price: 0,
             kind: TxKind::Call(Address::default()),
             value: U256::ZERO,

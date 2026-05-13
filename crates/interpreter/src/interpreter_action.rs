@@ -85,6 +85,8 @@ pub enum InterpreterAction {
     NewFrame(FrameInput),
     /// Interpreter finished execution.
     Return(InterpreterResult),
+    /// An interruption (missing shared resource, aka BALANCE, CODEHASH, etc.).
+    SystemInterruption,
 }
 
 impl InterpreterAction {

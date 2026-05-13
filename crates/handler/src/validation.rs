@@ -5,7 +5,7 @@ use context_interface::{
 };
 use core::cmp;
 use interpreter::{instructions::calculate_initial_tx_gas_for_tx, InitialAndFloorGas};
-use primitives::{eip4844, hardfork::SpecId, B256};
+use primitives::{eip4844, hardfork::SpecId, wasm::wasm_max_code_size, B256};
 
 /// Validates the execution environment including block and transaction parameters.
 pub fn validate_env<CTX: ContextTr, ERROR: From<InvalidHeader> + From<InvalidTransaction>>(
@@ -218,12 +218,13 @@ pub fn validate_tx_env<CTX: ContextTr>(
         return Err(InvalidTransaction::CallerGasLimitMoreThanBlock);
     }
 
-    // EIP-3860: Limit and meter initcode. Still valid with EIP-7907 and increase of initcode size.
-    if spec_id.is_enabled_in(SpecId::SHANGHAI)
-        && tx.kind().is_create()
-        && tx.input().len() > context.cfg().max_initcode_size()
-    {
-        return Err(InvalidTransaction::CreateInitCodeSizeLimit);
+    // EIP-3860: Limit and meter initcode
+    if spec_id.is_enabled_in(SpecId::SHANGHAI) && tx.kind().is_create() {
+        let max_initcode_size = wasm_max_code_size(tx.input())
+            .unwrap_or_else(|| context.cfg().max_code_size().saturating_mul(2));
+        if tx.input().len() > max_initcode_size {
+            return Err(InvalidTransaction::CreateInitCodeSizeLimit);
+        }
     }
 
     // Check that the transaction's nonce is not at the maximum value.
@@ -242,6 +243,7 @@ pub fn validate_initial_tx_gas(
     is_eip7623_disabled: bool,
     is_amsterdam_eip8037_enabled: bool,
     tx_gas_limit_cap: u64,
+    enable_legacy_bytecode: bool,
 ) -> Result<InitialAndFloorGas, InvalidTransaction> {
     let mut gas = calculate_initial_tx_gas_for_tx(&tx, spec);
 
@@ -259,7 +261,11 @@ pub fn validate_initial_tx_gas(
 
     // EIP-7623: Increase calldata cost
     // floor gas should be less than gas limit.
-    if spec.is_enabled_in(SpecId::PRAGUE) && gas.floor_gas > tx.gas_limit() {
+    if enable_legacy_bytecode
+        && spec.is_enabled_in(SpecId::PRAGUE)
+        && gas.floor_gas > tx.gas_limit()
+    {
+        // coming from large calldata.
         return Err(InvalidTransaction::GasFloorMoreThanGasLimit {
             gas_floor: gas.floor_gas,
             gas_limit: tx.gas_limit(),

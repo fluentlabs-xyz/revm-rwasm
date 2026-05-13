@@ -20,7 +20,7 @@ impl DefaultOp for OpContext<EmptyDB> {
     fn op() -> Self {
         Context::mainnet()
             .with_tx(OpTransaction::builder().build_fill())
-            .with_cfg(CfgEnv::new_with_spec(OpSpecId::BEDROCK))
+            .with_cfg(CfgEnv::new_with_spec(OpSpecId::BEDROCK).enable_legacy_bytecode())
             .with_chain(L1BlockInfo::default())
     }
 }

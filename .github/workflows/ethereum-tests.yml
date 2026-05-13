@@ -6,13 +6,13 @@ concurrency:
 
 on:
   push:
-    branches: [main, "release/**"]
+    branches: [main, "release/**", v107-patched]
   pull_request:
-    branches: [main, "release/**"]
+    branches: [main, "release/**", v107-patched]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
     strategy:
       matrix:

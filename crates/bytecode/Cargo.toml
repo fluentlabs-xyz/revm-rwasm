@@ -31,6 +31,9 @@ serde = { workspace = true, features = ["derive", "rc"], optional = true }
 paste = { workspace = true, optional = true }
 phf = { workspace = true, features = ["macros"], optional = true }
 
+# rwasm
+rwasm = { workspace = true }
+
 [dev-dependencies]
 anyhow.workspace = true
 rand.workspace = true
@@ -44,6 +47,7 @@ std = [
   "primitives/std",
   "bitvec/std",
   "phf?/std",
+  "rwasm/std",
 ]
 hashbrown = ["primitives/hashbrown"]
 serde = [
@@ -51,7 +55,8 @@ serde = [
 	"primitives/serde",
 	"bitvec/serde",
 	"phf?/serde",
-	"rand/serde"
+	"rand/serde",
+    "rwasm/serde"
 ]
 parse = ["phf", "paste"]
 

@@ -123,3 +123,5 @@ p256-aws-lc-rs = ["precompile/p256-aws-lc-rs"]
 
 # Statetest types for running ethereum tests
 test-types = ["dep:statetest-types"]
+
+debug-print = ["handler/debug-print", "interpreter/debug-print"]

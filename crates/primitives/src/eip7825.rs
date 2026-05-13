@@ -9,4 +9,8 @@
 /// The proposed cap of 16,777,216 gas (2^24) provides a clean power-of-two boundary that simplifies implementation while still
 /// being large enough to accommodate most complex transactions, including contract deployments and advanced DeFi interactions.
 /// This value represents approximately half of typical block sizes (30-40 million gas), ensuring multiple transactions can fit within each block.
-pub const TX_GAS_LIMIT_CAP: u64 = 16_777_216;
+pub const LEGACY_TX_GAS_LIMIT_CAP: u64 = 16_777_216;
+
+/// We disable this check because for Fluent we can have more than 16mil, for example, if we need
+/// to deploy big Wasm binary (~1 MiB)
+pub const TX_GAS_LIMIT_CAP: u64 = u64::MAX;

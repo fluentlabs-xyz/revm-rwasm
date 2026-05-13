@@ -10,7 +10,10 @@ mod serde_impl;
 use crate::{
     eip7702::{Eip7702DecodeError, EIP7702_MAGIC_BYTES, EIP7702_VERSION},
     legacy::analyze_legacy,
-    opcode, BytecodeDecodeError, JumpTable,
+    opcode,
+    ownable_account::{OwnableAccountBytecode, OWNABLE_ACCOUNT_MAGIC_BYTES},
+    rwasm::{RwasmBytecode, RWASM_MAGIC_BYTES},
+    BytecodeDecodeError, JumpTable,
 };
 use primitives::{
     alloy_primitives::Sealable, keccak256, Address, Bytes, OnceLock, B256, KECCAK_EMPTY,
@@ -19,7 +22,14 @@ use std::sync::Arc;
 
 /// Ethereum EVM bytecode.
 #[derive(Clone, Debug)]
-pub struct Bytecode(Arc<BytecodeInner>);
+pub enum Bytecode {
+    /// A default legacy bytecode (we keep it here mostly for e2e testing suite, Fluent doesn't use it).
+    BytecodeInner(Arc<BytecodeInner>),
+    /// A based Rwasm bytecode, used for system precompiles and user smart contracts.
+    Rwasm(Arc<RwasmBytecode>),
+    /// An ownable account bytecode.
+    OwnableAccount(Arc<OwnableAccountBytecode>),
+}
 
 /// Inner bytecode representation.
 ///
@@ -27,7 +37,7 @@ pub struct Bytecode(Arc<BytecodeInner>);
 /// how the bytecode should be interpreted.
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-struct BytecodeInner {
+pub struct BytecodeInner {
     /// The kind of bytecode (Legacy or EIP-7702).
     kind: BytecodeKind,
     /// The bytecode bytes.
@@ -55,6 +65,10 @@ pub enum BytecodeKind {
     LegacyAnalyzed,
     /// EIP-7702 delegated bytecode.
     Eip7702,
+    /// Rwasm bytecode.
+    Rwasm,
+    /// Delegated bytecode metadata.
+    OwnableAccount,
 }
 
 impl Default for Bytecode {
@@ -108,7 +122,7 @@ impl Bytecode {
         static DEFAULT_BYTECODE: OnceLock<Bytecode> = OnceLock::new();
         DEFAULT_BYTECODE
             .get_or_init(|| {
-                Self(Arc::new(BytecodeInner {
+                Self::BytecodeInner(Arc::new(BytecodeInner {
                     kind: BytecodeKind::LegacyAnalyzed,
                     bytecode: Bytes::from_static(&[opcode::STOP]),
                     original_len: 0,
@@ -132,7 +146,7 @@ impl Bytecode {
 
         let original_len = raw.len();
         let (jump_table, bytecode) = analyze_legacy(raw);
-        Self(Arc::new(BytecodeInner {
+        Self::BytecodeInner(Arc::new(BytecodeInner {
             kind: BytecodeKind::LegacyAnalyzed,
             original_len,
             bytecode,
@@ -157,7 +171,7 @@ impl Bytecode {
         let raw: Bytes = [EIP7702_MAGIC_BYTES, &[EIP7702_VERSION], &address[..]]
             .concat()
             .into();
-        Self(Arc::new(BytecodeInner {
+        Self::BytecodeInner(Arc::new(BytecodeInner {
             kind: BytecodeKind::Eip7702,
             original_len: raw.len(),
             bytecode: raw,
@@ -166,11 +180,34 @@ impl Bytecode {
         }))
     }
 
+    /// Creates new Rwasm [`Bytecode`]
+    #[inline]
+    pub fn new_rwasm(raw: Bytes) -> Self {
+        Self::Rwasm(Arc::new(RwasmBytecode::new(raw).unwrap()))
+    }
+
+    /// Creates new ownable account [`Bytecode`]
+    #[inline]
+    pub fn new_ownable_account(owner_address: Address, metadata: Bytes) -> Self {
+        Self::OwnableAccount(Arc::new(OwnableAccountBytecode::new(
+            owner_address,
+            metadata,
+        )))
+    }
+
     /// Creates a new raw [`Bytecode`].
     ///
     /// Returns an error on incorrect bytecode format.
     #[inline]
     pub fn new_raw_checked(bytes: Bytes) -> Result<Self, BytecodeDecodeError> {
+        // Additional bytecode types for Fluent (rWasm + Ownable Bytecode)
+        if bytes.starts_with(&RWASM_MAGIC_BYTES) {
+            return Ok(Self::Rwasm(Arc::new(RwasmBytecode::new(bytes)?)));
+        } else if bytes.starts_with(&OWNABLE_ACCOUNT_MAGIC_BYTES) {
+            return Ok(Self::OwnableAccount(Arc::new(
+                OwnableAccountBytecode::new_raw(bytes)?,
+            )));
+        }
         if bytes.starts_with(EIP7702_MAGIC_BYTES) {
             Self::new_eip7702_raw(bytes).map_err(Into::into)
         } else {
@@ -192,7 +229,7 @@ impl Bytecode {
         if bytes[2] != EIP7702_VERSION {
             return Err(Eip7702DecodeError::UnsupportedVersion);
         }
-        Ok(Self(Arc::new(BytecodeInner {
+        Ok(Self::BytecodeInner(Arc::new(BytecodeInner {
             kind: BytecodeKind::Eip7702,
             original_len: bytes.len(),
             bytecode: bytes,
@@ -219,7 +256,7 @@ impl Bytecode {
             "jump table length is less than original length"
         );
         assert!(!bytecode.is_empty(), "bytecode cannot be empty");
-        Self(Arc::new(BytecodeInner {
+        Self::BytecodeInner(Arc::new(BytecodeInner {
             kind: BytecodeKind::LegacyAnalyzed,
             bytecode,
             original_len,
@@ -231,13 +268,29 @@ impl Bytecode {
     /// Returns the kind of bytecode.
     #[inline]
     pub fn kind(&self) -> BytecodeKind {
-        self.0.kind
+        match self {
+            Bytecode::BytecodeInner(inner) => inner.kind,
+            Bytecode::Rwasm(_) => BytecodeKind::Rwasm,
+            Bytecode::OwnableAccount(_) => BytecodeKind::OwnableAccount,
+        }
     }
 
     /// Returns `true` if bytecode is legacy.
     #[inline]
     pub fn is_legacy(&self) -> bool {
         self.kind() == BytecodeKind::LegacyAnalyzed
+    }
+
+    /// Returns `true` if bytecode is rwasm.
+    #[inline]
+    pub fn is_rwasm(&self) -> bool {
+        self.kind() == BytecodeKind::Rwasm
+    }
+
+    /// Returns `true` if bytecode is an ownable account.
+    #[inline]
+    pub fn is_ownable_account(&self) -> bool {
+        self.kind() == BytecodeKind::OwnableAccount
     }
 
     /// Returns `true` if bytecode is EIP-7702.
@@ -249,30 +302,33 @@ impl Bytecode {
     /// Returns the EIP-7702 delegated address if this is EIP-7702 bytecode.
     #[inline]
     pub fn eip7702_address(&self) -> Option<Address> {
-        if self.is_eip7702() {
-            Some(Address::from_slice(&self.0.bytecode[3..23]))
-        } else {
-            None
+        match self {
+            Bytecode::BytecodeInner(inner) if self.is_eip7702() => {
+                Some(Address::from_slice(&inner.bytecode[3..23]))
+            }
+            _ => None,
         }
     }
 
     /// Returns jump table if bytecode is legacy analyzed.
     #[inline]
     pub fn legacy_jump_table(&self) -> Option<&JumpTable> {
-        if self.is_legacy() {
-            Some(&self.0.jump_table)
-        } else {
-            None
+        match self {
+            Bytecode::BytecodeInner(inner) if self.is_legacy() => Some(&inner.jump_table),
+            _ => None,
         }
     }
 
     /// Calculates or returns cached hash of the bytecode.
     #[inline]
     pub fn hash_slow(&self) -> B256 {
-        *self
-            .0
-            .hash
-            .get_or_init(|| keccak256(self.original_byte_slice()))
+        match self {
+            Bytecode::BytecodeInner(inner) => *inner
+                .hash
+                .get_or_init(|| keccak256(&inner.bytecode[..inner.original_len])),
+            Bytecode::Rwasm(inner) => *inner.hash.get_or_init(|| keccak256(&*inner.raw)),
+            Bytecode::OwnableAccount(inner) => *inner.hash.get_or_init(|| keccak256(&*inner.raw)),
+        }
     }
 
     /// Returns a reference to the bytecode bytes.
@@ -280,55 +336,91 @@ impl Bytecode {
     /// For legacy bytecode, this includes padding. For EIP-7702, this is the raw bytes.
     #[inline]
     pub fn bytecode(&self) -> &Bytes {
-        &self.0.bytecode
+        match self {
+            Bytecode::BytecodeInner(inner) => &inner.bytecode,
+            Bytecode::Rwasm(inner) => &inner.raw,
+            Bytecode::OwnableAccount(inner) => &inner.raw,
+        }
     }
 
     /// Pointer to the bytecode bytes.
     #[inline]
     pub fn bytecode_ptr(&self) -> *const u8 {
-        self.0.bytecode.as_ptr()
+        match self {
+            Bytecode::BytecodeInner(inner) => inner.bytecode.as_ptr(),
+            Bytecode::Rwasm(inner) => inner.raw.as_ptr(),
+            Bytecode::OwnableAccount(inner) => inner.raw.as_ptr(),
+        }
     }
 
     /// Returns a clone of the bytecode bytes.
     #[inline]
     pub fn bytes(&self) -> Bytes {
-        self.0.bytecode.clone()
+        match self {
+            Bytecode::BytecodeInner(inner) => inner.bytecode.clone(),
+            Bytecode::Rwasm(inner) => inner.raw.clone(),
+            Bytecode::OwnableAccount(inner) => inner.raw.clone(),
+        }
     }
 
     /// Returns a reference to the bytecode bytes.
     #[inline]
     pub fn bytes_ref(&self) -> &Bytes {
-        &self.0.bytecode
+        match self {
+            Bytecode::BytecodeInner(inner) => &inner.bytecode,
+            Bytecode::Rwasm(inner) => &inner.raw,
+            Bytecode::OwnableAccount(inner) => &inner.raw,
+        }
     }
 
     /// Returns the bytecode as a slice.
     #[inline]
     pub fn bytes_slice(&self) -> &[u8] {
-        &self.0.bytecode
+        match self {
+            Bytecode::BytecodeInner(inner) => &inner.bytecode,
+            Bytecode::Rwasm(inner) => &inner.raw,
+            Bytecode::OwnableAccount(inner) => &inner.raw,
+        }
     }
 
     /// Returns the original bytecode without padding.
     #[inline]
     pub fn original_bytes(&self) -> Bytes {
-        self.0.bytecode.slice(..self.0.original_len)
+        match self {
+            Bytecode::BytecodeInner(inner) => inner.bytecode.slice(..inner.original_len),
+            Bytecode::Rwasm(inner) => inner.raw.clone(),
+            Bytecode::OwnableAccount(inner) => inner.raw.clone(),
+        }
     }
 
     /// Returns the original bytecode as a byte slice without padding.
     #[inline]
     pub fn original_byte_slice(&self) -> &[u8] {
-        &self.0.bytecode[..self.0.original_len]
+        match self {
+            Bytecode::BytecodeInner(inner) => &inner.bytecode[..inner.original_len],
+            Bytecode::Rwasm(inner) => &inner.raw,
+            Bytecode::OwnableAccount(inner) => &inner.raw,
+        }
     }
 
     /// Returns the length of the original bytes (without padding).
     #[inline]
     pub fn len(&self) -> usize {
-        self.0.original_len
+        match self {
+            Bytecode::BytecodeInner(inner) => inner.original_len,
+            Bytecode::Rwasm(inner) => inner.raw.len(),
+            Bytecode::OwnableAccount(inner) => inner.raw.len(),
+        }
     }
 
     /// Returns whether the bytecode is empty.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.0.original_len == 0
+        match self {
+            Bytecode::BytecodeInner(inner) => inner.original_len == 0,
+            Bytecode::Rwasm(inner) => inner.raw.len() == 0,
+            Bytecode::OwnableAccount(inner) => inner.raw.len() == 0,
+        }
     }
 
     /// Returns an iterator over the opcodes in this bytecode, skipping immediates.

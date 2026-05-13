@@ -18,6 +18,18 @@ pub struct InputsImpl {
     pub input: CallInput,
     /// Value of the call.
     pub call_value: U256,
+    /// An owner of the account. It's used for EVM/WASM/SVM runtimes where accounts are accounts owned by  Address of the RWASM proxy, if enabled.
+    /// For example, when the EVM proxy is used, this will match the EVM system contract address.
+    pub account_owner: Option<Address>,
+}
+
+impl InputsImpl {
+    /// Returns an effective bytecode address
+    pub fn effective_bytecode_address(&self) -> Address {
+        self.account_owner
+            .or_else(|| self.bytecode_address)
+            .unwrap_or_else(|| self.target_address)
+    }
 }
 
 impl InputsTr for InputsImpl {
@@ -25,12 +37,12 @@ impl InputsTr for InputsImpl {
         self.target_address
     }
 
-    fn caller_address(&self) -> Address {
-        self.caller_address
-    }
-
     fn bytecode_address(&self) -> Option<&Address> {
         self.bytecode_address.as_ref()
+    }
+
+    fn caller_address(&self) -> Address {
+        self.caller_address
     }
 
     fn input(&self) -> &CallInput {
@@ -39,5 +51,9 @@ impl InputsTr for InputsImpl {
 
     fn call_value(&self) -> U256 {
         self.call_value
+    }
+
+    fn account_owner_address(&self) -> Option<Address> {
+        self.account_owner
     }
 }

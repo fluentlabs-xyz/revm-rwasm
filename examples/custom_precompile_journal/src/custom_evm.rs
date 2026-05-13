@@ -119,7 +119,7 @@ where
     }
 }
 
-impl<CTX, INSP> InspectorEvmTr for CustomEvm<CTX, INSP>
+impl<CTX, INSP> InspectorEvmTr<()> for CustomEvm<CTX, INSP>
 where
     CTX: ContextSetters<Cfg: revm::context::Cfg<Spec = SpecId>, Journal: JournalExt>,
     INSP: Inspector<CTX, EthInterpreter>,

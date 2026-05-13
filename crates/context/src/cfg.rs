@@ -2,7 +2,7 @@
 pub use context_interface::Cfg;
 
 use context_interface::cfg::GasParams;
-use primitives::{eip170, eip3860, eip7825, eip7954, hardfork::SpecId};
+use primitives::{eip170, eip3860, eip7954, hardfork::SpecId};
 
 /// EVM configuration
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -67,6 +67,10 @@ pub struct CfgEnv<SPEC = SpecId> {
     /// Introduced in Osaka in [EIP-7825: Transaction Gas Limit Cap](https://eips.ethereum.org/EIPS/eip-7825)
     /// with initials cap of 30M.
     pub tx_gas_limit_cap: Option<u64>,
+
+    /// Whether legacy bytecode creation is enabled.
+    pub legacy_bytecode_enabled: bool,
+
     /// A hard memory limit in bytes beyond which
     /// [OutOfGasError::Memory][context_interface::result::OutOfGasError::Memory] cannot be resized.
     ///
@@ -229,6 +233,12 @@ impl<SPEC> CfgEnv<SPEC> {
         cfg
     }
 
+    /// Sets the legacy flag to false.
+    pub fn enable_legacy_bytecode(mut self) -> Self {
+        self.legacy_bytecode_enabled = true;
+        self
+    }
+
     /// Consumes `self` and returns a new `CfgEnv` with the specified spec.
     ///
     /// Resets the gas params override function as it is generic over SPEC.
@@ -248,6 +258,7 @@ impl<SPEC> CfgEnv<SPEC> {
             max_blobs_per_tx: self.max_blobs_per_tx,
             blob_base_fee_update_fraction: self.blob_base_fee_update_fraction,
             gas_params,
+            legacy_bytecode_enabled: self.legacy_bytecode_enabled,
             #[cfg(feature = "memory_limit")]
             memory_limit: self.memory_limit,
             #[cfg(feature = "optional_balance_check")]
@@ -352,6 +363,7 @@ impl<SPEC: Into<SpecId> + Clone> CfgEnv<SPEC> {
             enable_amsterdam_eip8037: is_amsterdam,
             amsterdam_eip7708_disabled: false,
             amsterdam_eip7708_delayed_burn_disabled: false,
+            legacy_bytecode_enabled: false,
         }
     }
 
@@ -422,12 +434,18 @@ impl<SPEC: Into<SpecId> + Clone> Cfg for CfgEnv<SPEC> {
 
     #[inline]
     fn tx_gas_limit_cap(&self) -> u64 {
-        self.tx_gas_limit_cap
-            .unwrap_or(if self.spec.clone().into().is_enabled_in(SpecId::OSAKA) {
-                eip7825::TX_GAS_LIMIT_CAP
-            } else {
-                u64::MAX
-            })
+        if self.legacy_bytecode_enabled {
+            self.tx_gas_limit_cap.unwrap_or(
+                if self.spec.clone().into().is_enabled_in(SpecId::OSAKA) {
+                    primitives::eip7825::LEGACY_TX_GAS_LIMIT_CAP
+                } else {
+                    u64::MAX
+                },
+            )
+        } else {
+            // Note: Tx gas cap is not supported on Fluent
+            u64::MAX
+        }
     }
 
     #[inline]
@@ -570,6 +588,10 @@ impl<SPEC: Into<SpecId> + Clone> Cfg for CfgEnv<SPEC> {
 
     fn is_amsterdam_eip8037_enabled(&self) -> bool {
         self.enable_amsterdam_eip8037
+    }
+
+    fn is_legacy_bytecode_enabled(&self) -> bool {
+        self.legacy_bytecode_enabled
     }
 }
 

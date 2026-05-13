@@ -69,7 +69,9 @@ pub trait MainContext {
 
 impl MainContext for Context<BlockEnv, TxEnv, CfgEnv, EmptyDB, Journal<EmptyDB>, ()> {
     fn mainnet() -> Self {
-        Context::new(EmptyDB::new(), SpecId::default())
+        let mut ctx = Context::new(EmptyDB::new(), SpecId::default());
+        ctx.cfg.legacy_bytecode_enabled = true;
+        ctx
     }
 }
 
@@ -121,6 +123,83 @@ mod test {
 
         let auth_acc = state.get(&signer.address()).unwrap();
         assert_eq!(auth_acc.info.code, Some(Bytecode::new_eip7702(FFADDRESS)));
+        assert_eq!(auth_acc.info.nonce, 1);
+        assert_eq!(
+            auth_acc
+                .storage
+                .get(&StorageKey::from(1))
+                .unwrap()
+                .present_value,
+            StorageValue::from(1)
+        );
+    }
+
+    #[test]
+    #[ignore]
+    fn test_eip7702_delegating_to_ownable_account() {
+        use alloy_signer::{Either, SignerSync};
+        use alloy_signer_local::PrivateKeySigner;
+        use bytecode::{
+            opcode::{PUSH1, SSTORE},
+            Bytecode,
+        };
+        use context::{Context, TxEnv};
+        use context_interface::transaction::Authorization;
+        use database::InMemoryDB;
+        use primitives::{
+            address, hardfork::SpecId, Bytes, StorageKey, StorageValue, TxKind, U256,
+        };
+        use state::AccountInfo;
+
+        let signer = PrivateKeySigner::random();
+        let ownable_account_address = address!("0x0000000000000000000000000000000000001001");
+        let final_code_address = address!("0x0000000000000000000000000000000000001002");
+
+        let auth = Authorization {
+            chain_id: U256::ZERO,
+            nonce: 0,
+            address: ownable_account_address,
+        };
+        let signature = signer.sign_hash_sync(&auth.signature_hash()).unwrap();
+        let auth = auth.into_signed(signature);
+
+        let final_bytecode = Bytecode::new_legacy([PUSH1, 0x01, PUSH1, 0x01, SSTORE].into());
+        let ownable_bytecode = Bytecode::new_ownable_account(final_code_address, Bytes::new());
+
+        let mut db = InMemoryDB::default();
+        db.insert_account_info(
+            ownable_account_address,
+            AccountInfo::default().with_code(ownable_bytecode),
+        );
+        db.insert_account_info(
+            final_code_address,
+            AccountInfo::default().with_code(final_bytecode),
+        );
+
+        let ctx = Context::mainnet()
+            .modify_cfg_chained(|cfg| cfg.spec = SpecId::PRAGUE)
+            .with_db(db);
+
+        let mut evm = ctx.build_mainnet();
+
+        let state = evm
+            .transact(
+                TxEnv::builder()
+                    .gas_limit(100_000)
+                    .authorization_list(vec![Either::Left(auth)])
+                    .caller(address!("0x0000000000000000000000000000000000001003"))
+                    .kind(TxKind::Call(signer.address()))
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap()
+            .state;
+
+        let auth_acc = state.get(&signer.address()).unwrap();
+        assert_eq!(
+            auth_acc.info.code,
+            Some(Bytecode::new_eip7702(ownable_account_address))
+        );
         assert_eq!(auth_acc.info.nonce, 1);
         assert_eq!(
             auth_acc
