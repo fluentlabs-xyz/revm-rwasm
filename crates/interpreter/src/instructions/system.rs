@@ -28,7 +28,7 @@ pub fn keccak256<WIRE: InterpreterTypes, H: Host + ?Sized>(
     } else {
         let from = as_usize_or_fail!(context.interpreter, offset);
         resize_memory!(context.interpreter, context.host.gas_params(), from, len);
-        primitives::keccak256(context.interpreter.memory.slice_len(from, len).as_ref())
+        primitives::keccak256::<&[u8]>(context.interpreter.memory.slice_len(from, len).as_ref())
     };
     *top = hash.into();
 }
