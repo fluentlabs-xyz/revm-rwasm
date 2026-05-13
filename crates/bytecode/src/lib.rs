@@ -15,7 +15,7 @@ mod decode_errors;
 pub mod eip7702;
 /// Iterator for the bytecode.
 mod iter;
-mod legacy;
+pub mod legacy;
 pub mod opcode;
 pub mod utils;
 
