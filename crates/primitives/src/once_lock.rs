@@ -47,6 +47,15 @@ mod no_std_impl {
             self.inner.set(Box::new(value)).map_err(|e| *e)
         }
     }
+
+    impl<T: Clone> Clone for OnceLock<T> {
+        fn clone(&self) -> Self {
+            Self {
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
 }
 
 #[cfg(feature = "std")]
