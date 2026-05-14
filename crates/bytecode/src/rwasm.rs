@@ -1,7 +1,6 @@
 use crate::BytecodeDecodeError;
-use primitives::{Bytes, B256};
+use primitives::{Bytes, B256, OnceLock};
 use rwasm::RwasmModule;
-use std::sync::OnceLock;
 
 /// Rwasm magic number in array form.
 pub static RWASM_MAGIC_BYTES: Bytes = primitives::bytes!("ef52");

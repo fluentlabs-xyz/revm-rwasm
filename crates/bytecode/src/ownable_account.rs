@@ -1,6 +1,5 @@
 use core::fmt;
-use primitives::{b256, bytes, Address, Bytes, B256};
-use std::sync::OnceLock;
+use primitives::{b256, bytes, Address, Bytes, OnceLock, B256};
 
 /// Hash of EF44 bytes that is used for EXTCODEHASH when called from legacy bytecode.
 pub const OWNABLE_ACCOUNT_MAGIC_HASH: B256 =

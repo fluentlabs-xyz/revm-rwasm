@@ -234,20 +234,6 @@ impl Gas {
     #[must_use = "prefer using `gas!` instead to return an out-of-gas error on failure"]
     #[deprecated(since = "32.0.0", note = "use record_regular_cost instead")]
     pub fn record_cost(&mut self, cost: u64) -> bool {
-        #[cfg(feature = "debug-print")]
-        {
-            let str = std::format!("- record_cost: cost={}, remaining={}", cost, self.remaining);
-            #[cfg(target_arch = "wasm32")]
-            {
-                #[link(wasm_import_module = "fluentbase_v1preview")]
-                extern "C" {
-                    pub fn _debug_log(msg_ptr: *const u8, msg_len: u32);
-                }
-                unsafe { _debug_log(str.as_ptr(), str.len() as u32) };
-            }
-            #[cfg(feature = "std")]
-            println!("{}", str);
-        }
         self.record_regular_cost(cost)
     }
 
@@ -302,6 +288,20 @@ impl Gas {
     #[inline]
     #[must_use = "In case of not enough gas, the interpreter should halt with an out-of-gas error"]
     pub fn record_regular_cost(&mut self, cost: u64) -> bool {
+        #[cfg(feature = "debug-print")]
+        {
+            let str = std::format!("- record_cost: cost={}, remaining={}", cost, self.remaining);
+            #[cfg(target_arch = "wasm32")]
+            {
+                #[link(wasm_import_module = "fluentbase_v1preview")]
+                extern "C" {
+                    pub fn _debug_log(msg_ptr: *const u8, msg_len: u32);
+                }
+                unsafe { _debug_log(str.as_ptr(), str.len() as u32) };
+            }
+            #[cfg(feature = "std")]
+            println!("{}", str);
+        }
         self.tracker.record_regular_cost(cost)
     }
 }
