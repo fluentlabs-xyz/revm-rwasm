@@ -18,6 +18,7 @@ use crate::{
 use primitives::{
     alloy_primitives::Sealable, keccak256, Address, Bytes, OnceLock, B256, KECCAK_EMPTY,
 };
+use rwasm::RwasmModule;
 use std::sync::Arc;
 
 /// Ethereum EVM bytecode.
@@ -182,8 +183,13 @@ impl Bytecode {
 
     /// Creates new Rwasm [`Bytecode`]
     #[inline]
-    pub fn new_rwasm(raw: Bytes) -> Self {
-        Self::Rwasm(Arc::new(RwasmBytecode::new(raw).unwrap()))
+    pub fn new_rwasm(module: RwasmModule, raw: Option<Bytes>) -> Self {
+        let raw = raw.unwrap_or_else(|| module.serialize().into());
+        Self::Rwasm(Arc::new(RwasmBytecode {
+            module,
+            raw,
+            hash: OnceLock::new(),
+        }))
     }
 
     /// Creates new ownable account [`Bytecode`]

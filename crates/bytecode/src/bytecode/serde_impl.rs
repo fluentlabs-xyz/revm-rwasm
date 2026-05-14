@@ -1,5 +1,6 @@
 use super::{Arc, Bytecode, BytecodeInner, BytecodeKind, JumpTable, OnceLock};
 use primitives::{Address, Bytes};
+use rwasm::RwasmModule;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -13,7 +14,7 @@ enum BytecodeSerde {
         delegated_address: Address,
     },
     Rwasm {
-        rwasm_bytecode: Bytes,
+        rwasm_module: RwasmModule,
     },
     OwnableAccount {
         owner_address: Address,
@@ -39,7 +40,7 @@ impl Serialize for Bytecode {
                 repr.serialize(serializer)
             }
             Bytecode::Rwasm(inner) => BytecodeSerde::Rwasm {
-                rwasm_bytecode: inner.raw.clone(),
+                rwasm_module: inner.module.clone(),
             }
             .serialize(serializer),
             Bytecode::OwnableAccount(inner) => BytecodeSerde::OwnableAccount {
@@ -68,7 +69,7 @@ impl<'de> Deserialize<'de> for Bytecode {
             BytecodeSerde::Eip7702 { delegated_address } => {
                 Ok(Self::new_eip7702(delegated_address))
             }
-            BytecodeSerde::Rwasm { rwasm_bytecode } => Ok(Self::new_rwasm(rwasm_bytecode)),
+            BytecodeSerde::Rwasm { rwasm_module } => Ok(Self::new_rwasm(rwasm_module, None)),
             BytecodeSerde::OwnableAccount {
                 owner_address,
                 metadata,
