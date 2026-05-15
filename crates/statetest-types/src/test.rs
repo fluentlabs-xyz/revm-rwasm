@@ -32,7 +32,7 @@ pub struct Test {
     ///
     /// Note: Not used.
     #[serde(default)]
-    state: AddressMap<AccountInfo>,
+    pub state: AddressMap<AccountInfo>,
 
     /// Tx bytes
     pub txbytes: Option<Bytes>,
