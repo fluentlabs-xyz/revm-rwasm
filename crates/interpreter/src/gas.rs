@@ -250,7 +250,7 @@ impl Gas {
             let str = std::format!(
                 "- record_cost_unsafe: cost={}, remaining={}",
                 cost,
-                self.remaining
+                self.remaining()
             );
             #[cfg(target_arch = "wasm32")]
             {
@@ -290,7 +290,7 @@ impl Gas {
     pub fn record_regular_cost(&mut self, cost: u64) -> bool {
         #[cfg(feature = "debug-print")]
         {
-            let str = std::format!("- record_cost: cost={}, remaining={}", cost, self.remaining);
+            let str = std::format!("- record_cost: cost={}, remaining={}", cost, self.remaining());
             #[cfg(target_arch = "wasm32")]
             {
                 #[link(wasm_import_module = "fluentbase_v1preview")]
