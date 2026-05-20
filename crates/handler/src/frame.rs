@@ -1,3 +1,4 @@
+use crate::system_interruption::SystemInterruptionOutcome;
 use crate::{
     evm::FrameTr, item_or_result::FrameInitOrResult, precompile_provider::PrecompileProvider,
     CallFrame, CreateFrame, FrameData, FrameResult, ItemOrResult,
@@ -37,7 +38,7 @@ use std::{borrow::ToOwned, boxed::Box, vec::Vec};
     <IW as InterpreterTypes>::RuntimeFlag,
     <IW as InterpreterTypes>::Extend,
 )]
-pub struct EthFrame<IW: InterpreterTypes = EthInterpreter, EXT: Clone + core::fmt::Debug = ()> {
+pub struct EthFrame<IW: InterpreterTypes = EthInterpreter> {
     /// Frame-specific data (Call, Create, or EOFCreate).
     pub data: FrameData,
     /// Input data for the frame.
@@ -52,21 +53,21 @@ pub struct EthFrame<IW: InterpreterTypes = EthInterpreter, EXT: Clone + core::fm
     /// Frame is considered finished if it has been called and returned a result.
     pub is_finished: bool,
     /// Info about interrupted call (for rwasm execution)
-    pub interrupted_outcome: Option<EXT>,
+    pub interrupted_outcome: Option<SystemInterruptionOutcome>,
 }
 
-impl<IT: InterpreterTypes, EXT: Clone + core::fmt::Debug> FrameTr for EthFrame<IT, EXT> {
+impl<IT: InterpreterTypes> FrameTr for EthFrame<IT> {
     type FrameResult = FrameResult;
     type FrameInit = FrameInit;
 }
 
-impl<EXT: Clone + core::fmt::Debug> Default for EthFrame<EthInterpreter, EXT> {
+impl Default for EthFrame<EthInterpreter> {
     fn default() -> Self {
         Self::do_default(Interpreter::default())
     }
 }
 
-impl<EXT: Clone + core::fmt::Debug> EthFrame<EthInterpreter, EXT> {
+impl EthFrame<EthInterpreter> {
     /// Creates an new invalid [`EthFrame`].
     pub fn invalid() -> Self {
         Self::do_default(Interpreter::invalid())
@@ -87,7 +88,7 @@ impl<EXT: Clone + core::fmt::Debug> EthFrame<EthInterpreter, EXT> {
     }
 
     /// Insert an interrupted outcome into the frame
-    pub fn insert_interrupted_outcome(&mut self, interrupted_outcome: EXT) {
+    pub fn insert_interrupted_outcome(&mut self, interrupted_outcome: SystemInterruptionOutcome) {
         self.interrupted_outcome = Some(interrupted_outcome);
     }
 
@@ -97,7 +98,7 @@ impl<EXT: Clone + core::fmt::Debug> EthFrame<EthInterpreter, EXT> {
     }
 
     /// Take an interruption outcome
-    pub fn take_interrupted_outcome(&mut self) -> Option<EXT> {
+    pub fn take_interrupted_outcome(&mut self) -> Option<SystemInterruptionOutcome> {
         self.interrupted_outcome.take()
     }
 
@@ -115,7 +116,7 @@ impl<EXT: Clone + core::fmt::Debug> EthFrame<EthInterpreter, EXT> {
 /// Type alias for database errors from a context.
 pub type ContextTrDbError<CTX> = <<CTX as ContextTr>::Db as Database>::Error;
 
-impl<EXT: Clone + core::fmt::Debug> EthFrame<EthInterpreter, EXT> {
+impl EthFrame<EthInterpreter> {
     /// Clear and initialize a frame.
     #[allow(clippy::too_many_arguments)]
     #[inline(always)]
@@ -408,7 +409,7 @@ impl<EXT: Clone + core::fmt::Debug> EthFrame<EthInterpreter, EXT> {
     }
 }
 
-impl<EXT: Clone + core::fmt::Debug> EthFrame<EthInterpreter, EXT> {
+impl EthFrame<EthInterpreter> {
     /// Processes the next interpreter action, either creating a new frame or returning a result.
     pub fn process_next_action<
         CTX: ContextTr,

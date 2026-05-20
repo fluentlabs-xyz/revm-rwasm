@@ -1,5 +1,5 @@
 use crate::BytecodeDecodeError;
-use primitives::{Bytes, B256, OnceLock};
+use primitives::{Bytes, OnceLock, B256};
 use rwasm::RwasmModule;
 
 /// Rwasm magic number in array form.

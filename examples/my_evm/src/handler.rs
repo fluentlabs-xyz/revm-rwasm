@@ -59,10 +59,9 @@ where
     }
 }
 
-impl<EVM> InspectorHandler<()> for MyHandler<EVM>
+impl<EVM> InspectorHandler for MyHandler<EVM>
 where
     EVM: InspectorEvmTr<
-        (),
         Inspector: Inspector<<<Self as Handler>::Evm as EvmTr>::Context, EthInterpreter>,
         Context: ContextTr<Journal: JournalTr<State = EvmState>>,
         Precompiles: PrecompileProvider<EVM::Context, Output = InterpreterResult>,
