@@ -15,6 +15,8 @@ pub struct SystemInterruptionInputs {
     pub fuel_limit: u64,
     /// The state of the frame (STATE_MAIN or STATE_DEPLOY).
     pub state: u32,
+    /// A pointer where fuel params are located.
+    pub fuel16_ptr: u32,
     /// A gas snapshot assigned before the interruption.
     /// We need this to calculate the final amount of gas charged for the entire interruption.
     pub gas: Gas,
