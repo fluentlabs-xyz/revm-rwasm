@@ -171,24 +171,91 @@ impl From<HaltReason> for InstructionResult {
             HaltReason::CallNotAllowedInsideStatic => Self::CallNotAllowedInsideStatic,
             HaltReason::OutOfFunds => Self::OutOfFunds,
             HaltReason::CallTooDeep => Self::CallTooDeep,
+        }
+    }
+}
 
-            // Fluentbase error codes
-            HaltReason::RootCallOnly => Self::RootCallOnly,
-            HaltReason::MalformedBuiltinParams => Self::MalformedBuiltinParams,
-            HaltReason::CallDepthOverflow => Self::CallDepthOverflow,
-            HaltReason::NonNegativeExitCode => Self::NonNegativeExitCode,
-            HaltReason::UnknownError => Self::UnknownError,
-            HaltReason::InputOutputOutOfBounds => Self::InputOutputOutOfBounds,
-            HaltReason::UnreachableCodeReached => Self::UnreachableCodeReached,
-            HaltReason::MemoryOutOfBounds => Self::MemoryOutOfBounds,
-            HaltReason::TableOutOfBounds => Self::TableOutOfBounds,
-            HaltReason::IndirectCallToNull => Self::IndirectCallToNull,
-            HaltReason::IntegerDivisionByZero => Self::IntegerDivisionByZero,
-            HaltReason::IntegerOverflow => Self::IntegerOverflow,
-            HaltReason::BadConversionToInteger => Self::BadConversionToInteger,
-            HaltReason::BadSignature => Self::BadSignature,
-            HaltReason::OutOfFuel => Self::OutOfFuel,
-            HaltReason::UnknownExternalFunction => Self::UnknownExternalFunction,
+impl From<InstructionResult> for HaltReason {
+    fn from(value: InstructionResult) -> Self {
+        match value {
+            InstructionResult::CallTooDeep => Self::CallTooDeep,
+            InstructionResult::OutOfFunds => Self::OutOfFunds,
+            InstructionResult::OutOfGas => Self::OutOfGas(OutOfGasError::Basic),
+            InstructionResult::MemoryLimitOOG => Self::OutOfGas(OutOfGasError::MemoryLimit),
+            InstructionResult::MemoryOOG => Self::OutOfGas(OutOfGasError::Memory),
+            InstructionResult::PrecompileOOG => Self::OutOfGas(OutOfGasError::Precompile),
+            InstructionResult::InvalidOperandOOG => Self::OutOfGas(OutOfGasError::InvalidOperand),
+            InstructionResult::ReentrancySentryOOG => {
+                Self::OutOfGas(OutOfGasError::ReentrancySentry)
+            }
+            InstructionResult::OpcodeNotFound | InstructionResult::InvalidImmediateEncoding => {
+                Self::OpcodeNotFound
+            }
+            InstructionResult::CallNotAllowedInsideStatic => Self::CallNotAllowedInsideStatic,
+            InstructionResult::StateChangeDuringStaticCall => Self::StateChangeDuringStaticCall,
+            InstructionResult::InvalidFEOpcode => Self::InvalidFEOpcode,
+            InstructionResult::InvalidJump => Self::InvalidJump,
+            InstructionResult::NotActivated => Self::NotActivated,
+            InstructionResult::StackUnderflow => Self::StackUnderflow,
+            InstructionResult::StackOverflow => Self::StackOverflow,
+            InstructionResult::OutOfOffset | InstructionResult::InputOutputOutOfBounds => {
+                Self::OutOfOffset
+            }
+            InstructionResult::CreateCollision => Self::CreateCollision,
+            InstructionResult::OverflowPayment | InstructionResult::IntegerOverflow => {
+                Self::OverflowPayment
+            }
+            InstructionResult::PrecompileError => Self::PrecompileError,
+            InstructionResult::NonceOverflow => Self::NonceOverflow,
+            InstructionResult::CreateContractSizeLimit => Self::CreateContractSizeLimit,
+            InstructionResult::CreateContractStartingWithEF => Self::CreateContractStartingWithEF,
+            InstructionResult::CreateInitCodeSizeLimit => Self::CreateInitCodeSizeLimit,
+            InstructionResult::RootCallOnly => {
+                Self::PrecompileErrorWithContext("RootCallOnly".into())
+            }
+            InstructionResult::MalformedBuiltinParams => {
+                Self::PrecompileErrorWithContext("MalformedBuiltinParams".into())
+            }
+            InstructionResult::CallDepthOverflow => Self::CallTooDeep,
+            InstructionResult::NonNegativeExitCode => {
+                Self::PrecompileErrorWithContext("NonNegativeExitCode".into())
+            }
+            InstructionResult::UnknownError => {
+                Self::PrecompileErrorWithContext("UnknownError".into())
+            }
+            InstructionResult::UnreachableCodeReached => {
+                Self::PrecompileErrorWithContext("UnreachableCodeReached".into())
+            }
+            InstructionResult::MemoryOutOfBounds => {
+                Self::PrecompileErrorWithContext("MemoryOutOfBounds".into())
+            }
+            InstructionResult::TableOutOfBounds => {
+                Self::PrecompileErrorWithContext("TableOutOfBounds".into())
+            }
+            InstructionResult::IndirectCallToNull => {
+                Self::PrecompileErrorWithContext("IndirectCallToNull".into())
+            }
+            InstructionResult::IntegerDivisionByZero => {
+                Self::PrecompileErrorWithContext("IntegerDivisionByZero".into())
+            }
+            InstructionResult::BadConversionToInteger => {
+                Self::PrecompileErrorWithContext("BadConversionToInteger".into())
+            }
+            InstructionResult::BadSignature => {
+                Self::PrecompileErrorWithContext("BadSignature".into())
+            }
+            InstructionResult::OutOfFuel => Self::OutOfGas(OutOfGasError::Basic),
+            InstructionResult::UnknownExternalFunction => {
+                Self::PrecompileErrorWithContext("UnknownExternalFunction".into())
+            }
+            InstructionResult::Stop
+            | InstructionResult::Return
+            | InstructionResult::SelfDestruct
+            | InstructionResult::Revert
+            | InstructionResult::CreateInitCodeStartingEF00
+            | InstructionResult::InvalidEOFInitCode
+            | InstructionResult::FatalExternalError
+            | InstructionResult::InvalidExtDelegateCallTarget => Self::PrecompileError,
         }
     }
 }
@@ -361,7 +428,7 @@ impl<HALT: From<HaltReason>> From<HaltReason> for SuccessOrHalt<HALT> {
     }
 }
 
-impl<HaltReasonTr: From<HaltReason>> From<InstructionResult> for SuccessOrHalt<HaltReasonTr> {
+impl<HALT: From<InstructionResult>> From<InstructionResult> for SuccessOrHalt<HALT> {
     fn from(result: InstructionResult) -> Self {
         match result {
             InstructionResult::Stop => Self::Success(SuccessReason::Stop),
@@ -369,105 +436,84 @@ impl<HaltReasonTr: From<HaltReason>> From<InstructionResult> for SuccessOrHalt<H
             InstructionResult::SelfDestruct => Self::Success(SuccessReason::SelfDestruct),
             InstructionResult::Revert => Self::Revert,
             InstructionResult::CreateInitCodeStartingEF00 => Self::Revert,
-            InstructionResult::CallTooDeep => Self::Halt(HaltReason::CallTooDeep.into()), // not gonna happen for first call
-            InstructionResult::OutOfFunds => Self::Halt(HaltReason::OutOfFunds.into()), // Check for first call is done separately.
-            InstructionResult::OutOfGas => {
-                Self::Halt(HaltReason::OutOfGas(OutOfGasError::Basic).into())
-            }
-            InstructionResult::MemoryLimitOOG => {
-                Self::Halt(HaltReason::OutOfGas(OutOfGasError::MemoryLimit).into())
-            }
-            InstructionResult::MemoryOOG => {
-                Self::Halt(HaltReason::OutOfGas(OutOfGasError::Memory).into())
-            }
-            InstructionResult::PrecompileOOG => {
-                Self::Halt(HaltReason::OutOfGas(OutOfGasError::Precompile).into())
-            }
-            InstructionResult::InvalidOperandOOG => {
-                Self::Halt(HaltReason::OutOfGas(OutOfGasError::InvalidOperand).into())
-            }
-            InstructionResult::ReentrancySentryOOG => {
-                Self::Halt(HaltReason::OutOfGas(OutOfGasError::ReentrancySentry).into())
-            }
-            InstructionResult::OpcodeNotFound => Self::Halt(HaltReason::OpcodeNotFound.into()),
-            InstructionResult::CallNotAllowedInsideStatic => {
-                Self::Halt(HaltReason::CallNotAllowedInsideStatic.into())
-            } // first call is not static call
-            InstructionResult::StateChangeDuringStaticCall => {
-                Self::Halt(HaltReason::StateChangeDuringStaticCall.into())
-            }
-            InstructionResult::InvalidFEOpcode => Self::Halt(HaltReason::InvalidFEOpcode.into()),
-            InstructionResult::InvalidJump => Self::Halt(HaltReason::InvalidJump.into()),
-            InstructionResult::NotActivated => Self::Halt(HaltReason::NotActivated.into()),
-            InstructionResult::StackUnderflow => Self::Halt(HaltReason::StackUnderflow.into()),
-            InstructionResult::StackOverflow => Self::Halt(HaltReason::StackOverflow.into()),
-            InstructionResult::OutOfOffset => Self::Halt(HaltReason::OutOfOffset.into()),
-            InstructionResult::CreateCollision => Self::Halt(HaltReason::CreateCollision.into()),
-            InstructionResult::OverflowPayment => Self::Halt(HaltReason::OverflowPayment.into()), // Check for first call is done separately.
-            InstructionResult::PrecompileError => Self::Halt(HaltReason::PrecompileError.into()),
-            InstructionResult::NonceOverflow => Self::Halt(HaltReason::NonceOverflow.into()),
-            InstructionResult::CreateContractSizeLimit => {
-                Self::Halt(HaltReason::CreateContractSizeLimit.into())
-            }
-            InstructionResult::CreateContractStartingWithEF => {
-                Self::Halt(HaltReason::CreateContractStartingWithEF.into())
-            }
-            InstructionResult::CreateInitCodeSizeLimit => {
-                Self::Halt(HaltReason::CreateInitCodeSizeLimit.into())
-            }
+            InstructionResult::CallTooDeep
+            | InstructionResult::OutOfFunds
+            | InstructionResult::OutOfGas
+            | InstructionResult::MemoryLimitOOG
+            | InstructionResult::MemoryOOG
+            | InstructionResult::PrecompileOOG
+            | InstructionResult::InvalidOperandOOG
+            | InstructionResult::ReentrancySentryOOG
+            | InstructionResult::OpcodeNotFound
+            | InstructionResult::CallNotAllowedInsideStatic
+            | InstructionResult::StateChangeDuringStaticCall
+            | InstructionResult::InvalidFEOpcode
+            | InstructionResult::InvalidJump
+            | InstructionResult::NotActivated
+            | InstructionResult::StackUnderflow
+            | InstructionResult::StackOverflow
+            | InstructionResult::OutOfOffset
+            | InstructionResult::CreateCollision
+            | InstructionResult::OverflowPayment
+            | InstructionResult::PrecompileError
+            | InstructionResult::NonceOverflow
+            | InstructionResult::CreateContractSizeLimit
+            | InstructionResult::CreateContractStartingWithEF
+            | InstructionResult::CreateInitCodeSizeLimit => Self::Halt(result.into()),
             // TODO : (EOF) Add proper Revert subtype.
             InstructionResult::InvalidEOFInitCode => Self::Revert,
             InstructionResult::FatalExternalError => Self::FatalExternalError,
             InstructionResult::InvalidExtDelegateCallTarget => {
                 Self::Internal(InternalResult::InvalidExtDelegateCallTarget)
             }
-            InstructionResult::InvalidImmediateEncoding => {
-                Self::Halt(HaltReason::OpcodeNotFound.into())
-            }
-            // Fluentbase error codes
-            InstructionResult::RootCallOnly => Self::Halt(HaltReason::RootCallOnly.into()),
-            InstructionResult::MalformedBuiltinParams => {
-                Self::Halt(HaltReason::MalformedBuiltinParams.into())
-            }
-            InstructionResult::CallDepthOverflow => {
-                Self::Halt(HaltReason::CallDepthOverflow.into())
-            }
-            InstructionResult::NonNegativeExitCode => {
-                Self::Halt(HaltReason::NonNegativeExitCode.into())
-            }
-            InstructionResult::UnknownError => Self::Halt(HaltReason::UnknownError.into()),
-            InstructionResult::InputOutputOutOfBounds => {
-                Self::Halt(HaltReason::InputOutputOutOfBounds.into())
-            }
-            InstructionResult::UnreachableCodeReached => {
-                Self::Halt(HaltReason::UnreachableCodeReached.into())
-            }
-            InstructionResult::MemoryOutOfBounds => {
-                Self::Halt(HaltReason::MemoryOutOfBounds.into())
-            }
-            InstructionResult::TableOutOfBounds => Self::Halt(HaltReason::TableOutOfBounds.into()),
-            InstructionResult::IndirectCallToNull => {
-                Self::Halt(HaltReason::IndirectCallToNull.into())
-            }
-            InstructionResult::IntegerDivisionByZero => {
-                Self::Halt(HaltReason::IntegerDivisionByZero.into())
-            }
-            InstructionResult::IntegerOverflow => Self::Halt(HaltReason::IntegerOverflow.into()),
-            InstructionResult::BadConversionToInteger => {
-                Self::Halt(HaltReason::BadConversionToInteger.into())
-            }
-            InstructionResult::BadSignature => Self::Halt(HaltReason::BadSignature.into()),
-            InstructionResult::OutOfFuel => Self::Halt(HaltReason::OutOfFuel.into()),
-            InstructionResult::UnknownExternalFunction => {
-                Self::Halt(HaltReason::UnknownExternalFunction.into())
-            }
+            InstructionResult::InvalidImmediateEncoding
+            | InstructionResult::RootCallOnly
+            | InstructionResult::MalformedBuiltinParams
+            | InstructionResult::CallDepthOverflow
+            | InstructionResult::NonNegativeExitCode
+            | InstructionResult::UnknownError
+            | InstructionResult::InputOutputOutOfBounds
+            | InstructionResult::UnreachableCodeReached
+            | InstructionResult::MemoryOutOfBounds
+            | InstructionResult::TableOutOfBounds
+            | InstructionResult::IndirectCallToNull
+            | InstructionResult::IntegerDivisionByZero
+            | InstructionResult::IntegerOverflow
+            | InstructionResult::BadConversionToInteger
+            | InstructionResult::BadSignature
+            | InstructionResult::OutOfFuel
+            | InstructionResult::UnknownExternalFunction => Self::Halt(result.into()),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::InstructionResult;
+    use crate::{InstructionResult, SuccessOrHalt};
+    use context_interface::result::{HaltReason, OutOfGasError};
+
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    enum TestHaltReason {
+        Base(HaltReason),
+        RootCallOnly,
+        OutOfFuel,
+    }
+
+    impl From<HaltReason> for TestHaltReason {
+        fn from(value: HaltReason) -> Self {
+            Self::Base(value)
+        }
+    }
+
+    impl From<InstructionResult> for TestHaltReason {
+        fn from(value: InstructionResult) -> Self {
+            match value {
+                InstructionResult::RootCallOnly => Self::RootCallOnly,
+                InstructionResult::OutOfFuel => Self::OutOfFuel,
+                result => Self::Base(result.into()),
+            }
+        }
+    }
 
     #[test]
     fn exhaustiveness() {
@@ -531,5 +577,31 @@ mod tests {
             assert!(!result.is_revert());
             assert!(result.is_error());
         }
+    }
+
+    #[test]
+    fn runtime_halt_results_use_halt_reason_conversion() {
+        assert_eq!(
+            SuccessOrHalt::<TestHaltReason>::from(InstructionResult::RootCallOnly),
+            SuccessOrHalt::Halt(TestHaltReason::RootCallOnly)
+        );
+        assert_eq!(
+            SuccessOrHalt::<TestHaltReason>::from(InstructionResult::OutOfFuel),
+            SuccessOrHalt::Halt(TestHaltReason::OutOfFuel)
+        );
+    }
+
+    #[test]
+    fn base_halt_reason_collapses_runtime_halts() {
+        assert_eq!(
+            SuccessOrHalt::<HaltReason>::from(InstructionResult::RootCallOnly),
+            SuccessOrHalt::Halt(HaltReason::PrecompileErrorWithContext(
+                "RootCallOnly".into()
+            ))
+        );
+        assert_eq!(
+            SuccessOrHalt::<HaltReason>::from(InstructionResult::OutOfFuel),
+            SuccessOrHalt::Halt(HaltReason::OutOfGas(OutOfGasError::Basic))
+        );
     }
 }

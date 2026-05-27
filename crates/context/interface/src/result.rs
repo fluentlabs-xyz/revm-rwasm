@@ -1130,40 +1130,6 @@ pub enum HaltReason {
     OutOfFunds,
     /// Call is too deep.
     CallTooDeep,
-
-    /* Fluentbase Halts produced by rWasm VM runtime */
-    /// Function can only be invoked as the root entry call
-    RootCallOnly,
-    /// Builtin function received malformed or invalid parameters
-    MalformedBuiltinParams,
-    /// Exceeded maximum allowed call stack depth
-    CallDepthOverflow,
-    /// Exit code must be non-negative, but a negative value was used
-    NonNegativeExitCode,
-    /// Generic catch-all error for unknown failures
-    UnknownError,
-    /// I/O operation tried to read/write outside allowed buffer bounds
-    InputOutputOutOfBounds,
-    /// Execution reached a code path marked as unreachable
-    UnreachableCodeReached,
-    /// Memory access outside the allocated memory range
-    MemoryOutOfBounds,
-    /// Table index access outside the allocated table range
-    TableOutOfBounds,
-    /// Indirect function call attempted with a null function reference
-    IndirectCallToNull,
-    /// Division or remainder by zero occurred
-    IntegerDivisionByZero,
-    /// Integer arithmetic operation overflowed the allowed range
-    IntegerOverflow,
-    /// Invalid conversion to integer (e.g., from NaN or out-of-range value)
-    BadConversionToInteger,
-    /// Function signature mismatch in a call
-    BadSignature,
-    /// Execution ran out of allocated fuel/gas
-    OutOfFuel,
-    /// Call an undefined or unregistered external function
-    UnknownExternalFunction,
 }
 
 impl core::error::Error for HaltReason {}
@@ -1193,22 +1159,6 @@ impl fmt::Display for HaltReason {
             Self::CallNotAllowedInsideStatic => write!(f, "call not allowed inside static call"),
             Self::OutOfFunds => write!(f, "out of funds"),
             Self::CallTooDeep => write!(f, "call too deep"),
-            Self::RootCallOnly => write!(f, "root call only"),
-            Self::MalformedBuiltinParams => write!(f, "malformed builtin params"),
-            Self::CallDepthOverflow => write!(f, "call depth overflow"),
-            Self::NonNegativeExitCode => write!(f, "non negative exit code"),
-            Self::UnknownError => write!(f, "unknown error"),
-            Self::InputOutputOutOfBounds => write!(f, "input output out of bounds"),
-            Self::UnreachableCodeReached => write!(f, "unreachable code reached"),
-            Self::MemoryOutOfBounds => write!(f, "memory out of bounds"),
-            Self::TableOutOfBounds => write!(f, "table out of bounds"),
-            Self::IndirectCallToNull => write!(f, "indirect call to null"),
-            Self::IntegerDivisionByZero => write!(f, "integer division by zero"),
-            Self::IntegerOverflow => write!(f, "integer overflow"),
-            Self::BadConversionToInteger => write!(f, "bad conversion to integer"),
-            Self::BadSignature => write!(f, "bad signature"),
-            Self::OutOfFuel => write!(f, "out of fuel"),
-            Self::UnknownExternalFunction => write!(f, "unknown external function"),
         }
     }
 }

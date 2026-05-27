@@ -5,7 +5,7 @@ use context_interface::{
     result::{ExecutionResult, HaltReason, HaltReasonTr, ResultGas},
     Block, Cfg, ContextTr, Database, LocalContextTr, Transaction,
 };
-use interpreter::{Gas, InitialAndFloorGas, SuccessOrHalt};
+use interpreter::{Gas, InitialAndFloorGas, InstructionResult, SuccessOrHalt};
 use primitives::{hardfork::SpecId, U256};
 
 /// Builds a [`ResultGas`] from the execution [`Gas`] struct and [`InitialAndFloorGas`].
@@ -110,7 +110,10 @@ pub fn reward_beneficiary<CTX: ContextTr>(
 /// Calculate last gas spent and transform internal reason to external.
 ///
 /// TODO make Journal FinalOutput more generic.
-pub fn output<CTX: ContextTr<Journal: JournalTr>, HALTREASON: HaltReasonTr>(
+pub fn output<
+    CTX: ContextTr<Journal: JournalTr>,
+    HALTREASON: HaltReasonTr + From<InstructionResult>,
+>(
     context: &mut CTX,
     // TODO, make this more generic and nice.
     // FrameResult should be a generic that returns gas and interpreter result.

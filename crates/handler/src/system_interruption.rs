@@ -1,6 +1,7 @@
+use core::ops::Range;
 use interpreter::{Gas, InterpreterResult};
 use primitives::{B256, U256};
-use std::ops::Range;
+use std::vec::Vec;
 
 /// A system interruption input params
 #[derive(Clone, Debug, PartialEq, Eq)]
