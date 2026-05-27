@@ -15,9 +15,93 @@ use state::EvmState;
 use std::{borrow::Cow, boxed::Box, string::String, vec::Vec};
 
 /// Trait for the halt reason.
-pub trait HaltReasonTr: Clone + Debug + PartialEq + Eq + From<HaltReason> {}
+///
+/// Implementors can extend the base EVM halt reason space with chain/runtime-specific reasons.
+/// The default hooks collapse non-EVM runtime failures into [`HaltReason::PrecompileErrorWithContext`]
+/// so base EVM users do not need to carry Fluent/rWasm-specific variants.
+pub trait HaltReasonTr: Clone + Debug + PartialEq + Eq + From<HaltReason> {
+    /// Function can only be invoked as the root entry call.
+    fn root_call_only() -> Self {
+        HaltReason::PrecompileErrorWithContext("RootCallOnly".into()).into()
+    }
 
-impl<T> HaltReasonTr for T where T: Clone + Debug + PartialEq + Eq + From<HaltReason> {}
+    /// Builtin function received malformed or invalid parameters.
+    fn malformed_builtin_params() -> Self {
+        HaltReason::PrecompileErrorWithContext("MalformedBuiltinParams".into()).into()
+    }
+
+    /// Exceeded maximum allowed call stack depth.
+    fn call_depth_overflow() -> Self {
+        HaltReason::CallTooDeep.into()
+    }
+
+    /// Exit code must be negative, but a non-negative value was used.
+    fn non_negative_exit_code() -> Self {
+        HaltReason::PrecompileErrorWithContext("NonNegativeExitCode".into()).into()
+    }
+
+    /// Generic catch-all error for unknown failures.
+    fn unknown_error() -> Self {
+        HaltReason::PrecompileErrorWithContext("UnknownError".into()).into()
+    }
+
+    /// I/O operation tried to read/write outside allowed buffer bounds.
+    fn input_output_out_of_bounds() -> Self {
+        HaltReason::OutOfOffset.into()
+    }
+
+    /// Execution reached a code path marked as unreachable.
+    fn unreachable_code_reached() -> Self {
+        HaltReason::PrecompileErrorWithContext("UnreachableCodeReached".into()).into()
+    }
+
+    /// Memory access outside the allocated memory range.
+    fn memory_out_of_bounds() -> Self {
+        HaltReason::PrecompileErrorWithContext("MemoryOutOfBounds".into()).into()
+    }
+
+    /// Table index access outside the allocated table range.
+    fn table_out_of_bounds() -> Self {
+        HaltReason::PrecompileErrorWithContext("TableOutOfBounds".into()).into()
+    }
+
+    /// Indirect function call attempted with a null function reference.
+    fn indirect_call_to_null() -> Self {
+        HaltReason::PrecompileErrorWithContext("IndirectCallToNull".into()).into()
+    }
+
+    /// Division or remainder by zero occurred.
+    fn integer_division_by_zero() -> Self {
+        HaltReason::PrecompileErrorWithContext("IntegerDivisionByZero".into()).into()
+    }
+
+    /// Integer arithmetic operation overflowed the allowed range.
+    fn integer_overflow() -> Self {
+        HaltReason::OverflowPayment.into()
+    }
+
+    /// Invalid conversion to integer.
+    fn bad_conversion_to_integer() -> Self {
+        HaltReason::PrecompileErrorWithContext("BadConversionToInteger".into()).into()
+    }
+
+    /// Function signature mismatch in a call.
+    fn bad_signature() -> Self {
+        HaltReason::PrecompileErrorWithContext("BadSignature".into()).into()
+    }
+
+    /// Execution ran out of allocated fuel/gas.
+    fn out_of_fuel() -> Self {
+        HaltReason::OutOfGas(OutOfGasError::Basic).into()
+    }
+
+    /// Call an undefined or unregistered external function.
+    fn unknown_external_function() -> Self {
+        HaltReason::PrecompileErrorWithContext("UnknownExternalFunction".into()).into()
+    }
+}
+
+impl HaltReasonTr for HaltReason {}
 
 /// Tuple containing evm execution result and state.s
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -704,40 +788,6 @@ pub enum HaltReason {
     OutOfFunds,
     /// Call is too deep.
     CallTooDeep,
-
-    /* Fluentbase Halts produced by rWasm VM runtime */
-    /// Function can only be invoked as the root entry call
-    RootCallOnly,
-    /// Builtin function received malformed or invalid parameters
-    MalformedBuiltinParams,
-    /// Exceeded maximum allowed call stack depth
-    CallDepthOverflow,
-    /// Exit code must be non-negative, but a negative value was used
-    NonNegativeExitCode,
-    /// Generic catch-all error for unknown failures
-    UnknownError,
-    /// I/O operation tried to read/write outside allowed buffer bounds
-    InputOutputOutOfBounds,
-    /// Execution reached a code path marked as unreachable
-    UnreachableCodeReached,
-    /// Memory access outside the allocated memory range
-    MemoryOutOfBounds,
-    /// Table index access outside the allocated table range
-    TableOutOfBounds,
-    /// Indirect function call attempted with a null function reference
-    IndirectCallToNull,
-    /// Division or remainder by zero occurred
-    IntegerDivisionByZero,
-    /// Integer arithmetic operation overflowed the allowed range
-    IntegerOverflow,
-    /// Invalid conversion to integer (e.g., from NaN or out-of-range value)
-    BadConversionToInteger,
-    /// Function signature mismatch in a call
-    BadSignature,
-    /// Execution ran out of allocated fuel/gas
-    OutOfFuel,
-    /// Call an undefined or unregistered external function
-    UnknownExternalFunction,
 }
 
 impl core::error::Error for HaltReason {}
@@ -767,22 +817,6 @@ impl fmt::Display for HaltReason {
             Self::CallNotAllowedInsideStatic => write!(f, "call not allowed inside static call"),
             Self::OutOfFunds => write!(f, "out of funds"),
             Self::CallTooDeep => write!(f, "call too deep"),
-            Self::RootCallOnly => write!(f, "root call only"),
-            Self::MalformedBuiltinParams => write!(f, "malformed builtin params"),
-            Self::CallDepthOverflow => write!(f, "call depth overflow"),
-            Self::NonNegativeExitCode => write!(f, "non negative exit code"),
-            Self::UnknownError => write!(f, "unknown error"),
-            Self::InputOutputOutOfBounds => write!(f, "input output out of bounds"),
-            Self::UnreachableCodeReached => write!(f, "unreachable code reached"),
-            Self::MemoryOutOfBounds => write!(f, "memory out of bounds"),
-            Self::TableOutOfBounds => write!(f, "table out of bounds"),
-            Self::IndirectCallToNull => write!(f, "indirect call to null"),
-            Self::IntegerDivisionByZero => write!(f, "integer division by zero"),
-            Self::IntegerOverflow => write!(f, "integer overflow"),
-            Self::BadConversionToInteger => write!(f, "bad conversion to integer"),
-            Self::BadSignature => write!(f, "bad signature"),
-            Self::OutOfFuel => write!(f, "out of fuel"),
-            Self::UnknownExternalFunction => write!(f, "unknown external function"),
         }
     }
 }

@@ -1,6 +1,6 @@
 use context_interface::{
     journaled_state::TransferError,
-    result::{HaltReason, OutOfGasError, SuccessReason},
+    result::{HaltReason, HaltReasonTr, OutOfGasError, SuccessReason},
 };
 use core::fmt::Debug;
 
@@ -169,24 +169,6 @@ impl From<HaltReason> for InstructionResult {
             HaltReason::CallNotAllowedInsideStatic => Self::CallNotAllowedInsideStatic,
             HaltReason::OutOfFunds => Self::OutOfFunds,
             HaltReason::CallTooDeep => Self::CallTooDeep,
-
-            // Fluentbase error codes
-            HaltReason::RootCallOnly => Self::RootCallOnly,
-            HaltReason::MalformedBuiltinParams => Self::MalformedBuiltinParams,
-            HaltReason::CallDepthOverflow => Self::CallDepthOverflow,
-            HaltReason::NonNegativeExitCode => Self::NonNegativeExitCode,
-            HaltReason::UnknownError => Self::UnknownError,
-            HaltReason::InputOutputOutOfBounds => Self::InputOutputOutOfBounds,
-            HaltReason::UnreachableCodeReached => Self::UnreachableCodeReached,
-            HaltReason::MemoryOutOfBounds => Self::MemoryOutOfBounds,
-            HaltReason::TableOutOfBounds => Self::TableOutOfBounds,
-            HaltReason::IndirectCallToNull => Self::IndirectCallToNull,
-            HaltReason::IntegerDivisionByZero => Self::IntegerDivisionByZero,
-            HaltReason::IntegerOverflow => Self::IntegerOverflow,
-            HaltReason::BadConversionToInteger => Self::BadConversionToInteger,
-            HaltReason::BadSignature => Self::BadSignature,
-            HaltReason::OutOfFuel => Self::OutOfFuel,
-            HaltReason::UnknownExternalFunction => Self::UnknownExternalFunction,
         }
     }
 }
@@ -358,7 +340,7 @@ impl<HALT: From<HaltReason>> From<HaltReason> for SuccessOrHalt<HALT> {
     }
 }
 
-impl<HaltReasonTr: From<HaltReason>> From<InstructionResult> for SuccessOrHalt<HaltReasonTr> {
+impl<HALT: HaltReasonTr> From<InstructionResult> for SuccessOrHalt<HALT> {
     fn from(result: InstructionResult) -> Self {
         match result {
             InstructionResult::Stop => Self::Success(SuccessReason::Stop),
@@ -418,42 +400,35 @@ impl<HaltReasonTr: From<HaltReason>> From<InstructionResult> for SuccessOrHalt<H
             InstructionResult::InvalidExtDelegateCallTarget => {
                 Self::Internal(InternalResult::InvalidExtDelegateCallTarget)
             }
-            // Fluentbase error codes
-            InstructionResult::RootCallOnly => Self::Halt(HaltReason::RootCallOnly.into()),
+            // Fluent/rWasm runtime errors are mapped through the generic halt reason
+            // extension point instead of being embedded into base EVM HaltReason.
+            InstructionResult::RootCallOnly => Self::Halt(HALT::root_call_only()),
             InstructionResult::MalformedBuiltinParams => {
-                Self::Halt(HaltReason::MalformedBuiltinParams.into())
+                Self::Halt(HALT::malformed_builtin_params())
             }
-            InstructionResult::CallDepthOverflow => {
-                Self::Halt(HaltReason::CallDepthOverflow.into())
-            }
-            InstructionResult::NonNegativeExitCode => {
-                Self::Halt(HaltReason::NonNegativeExitCode.into())
-            }
-            InstructionResult::UnknownError => Self::Halt(HaltReason::UnknownError.into()),
+            InstructionResult::CallDepthOverflow => Self::Halt(HALT::call_depth_overflow()),
+            InstructionResult::NonNegativeExitCode => Self::Halt(HALT::non_negative_exit_code()),
+            InstructionResult::UnknownError => Self::Halt(HALT::unknown_error()),
             InstructionResult::InputOutputOutOfBounds => {
-                Self::Halt(HaltReason::InputOutputOutOfBounds.into())
+                Self::Halt(HALT::input_output_out_of_bounds())
             }
             InstructionResult::UnreachableCodeReached => {
-                Self::Halt(HaltReason::UnreachableCodeReached.into())
+                Self::Halt(HALT::unreachable_code_reached())
             }
-            InstructionResult::MemoryOutOfBounds => {
-                Self::Halt(HaltReason::MemoryOutOfBounds.into())
-            }
-            InstructionResult::TableOutOfBounds => Self::Halt(HaltReason::TableOutOfBounds.into()),
-            InstructionResult::IndirectCallToNull => {
-                Self::Halt(HaltReason::IndirectCallToNull.into())
-            }
+            InstructionResult::MemoryOutOfBounds => Self::Halt(HALT::memory_out_of_bounds()),
+            InstructionResult::TableOutOfBounds => Self::Halt(HALT::table_out_of_bounds()),
+            InstructionResult::IndirectCallToNull => Self::Halt(HALT::indirect_call_to_null()),
             InstructionResult::IntegerDivisionByZero => {
-                Self::Halt(HaltReason::IntegerDivisionByZero.into())
+                Self::Halt(HALT::integer_division_by_zero())
             }
-            InstructionResult::IntegerOverflow => Self::Halt(HaltReason::IntegerOverflow.into()),
+            InstructionResult::IntegerOverflow => Self::Halt(HALT::integer_overflow()),
             InstructionResult::BadConversionToInteger => {
-                Self::Halt(HaltReason::BadConversionToInteger.into())
+                Self::Halt(HALT::bad_conversion_to_integer())
             }
-            InstructionResult::BadSignature => Self::Halt(HaltReason::BadSignature.into()),
-            InstructionResult::OutOfFuel => Self::Halt(HaltReason::OutOfFuel.into()),
+            InstructionResult::BadSignature => Self::Halt(HALT::bad_signature()),
+            InstructionResult::OutOfFuel => Self::Halt(HALT::out_of_fuel()),
             InstructionResult::UnknownExternalFunction => {
-                Self::Halt(HaltReason::UnknownExternalFunction.into())
+                Self::Halt(HALT::unknown_external_function())
             }
         }
     }
@@ -461,7 +436,31 @@ impl<HaltReasonTr: From<HaltReason>> From<InstructionResult> for SuccessOrHalt<H
 
 #[cfg(test)]
 mod tests {
-    use crate::InstructionResult;
+    use crate::{InstructionResult, SuccessOrHalt};
+    use context_interface::result::{HaltReason, HaltReasonTr, OutOfGasError};
+
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    enum TestHaltReason {
+        Base(HaltReason),
+        RootCallOnly,
+        OutOfFuel,
+    }
+
+    impl From<HaltReason> for TestHaltReason {
+        fn from(value: HaltReason) -> Self {
+            Self::Base(value)
+        }
+    }
+
+    impl HaltReasonTr for TestHaltReason {
+        fn root_call_only() -> Self {
+            Self::RootCallOnly
+        }
+
+        fn out_of_fuel() -> Self {
+            Self::OutOfFuel
+        }
+    }
 
     #[test]
     fn exhaustiveness() {
@@ -525,5 +524,31 @@ mod tests {
             assert!(!result.is_revert());
             assert!(result.is_error());
         }
+    }
+
+    #[test]
+    fn runtime_halt_results_use_extension_hooks() {
+        assert_eq!(
+            SuccessOrHalt::<TestHaltReason>::from(InstructionResult::RootCallOnly),
+            SuccessOrHalt::Halt(TestHaltReason::RootCallOnly)
+        );
+        assert_eq!(
+            SuccessOrHalt::<TestHaltReason>::from(InstructionResult::OutOfFuel),
+            SuccessOrHalt::Halt(TestHaltReason::OutOfFuel)
+        );
+    }
+
+    #[test]
+    fn base_halt_reason_collapses_runtime_halts() {
+        assert_eq!(
+            SuccessOrHalt::<HaltReason>::from(InstructionResult::RootCallOnly),
+            SuccessOrHalt::Halt(HaltReason::PrecompileErrorWithContext(
+                "RootCallOnly".into()
+            ))
+        );
+        assert_eq!(
+            SuccessOrHalt::<HaltReason>::from(InstructionResult::OutOfFuel),
+            SuccessOrHalt::Halt(HaltReason::OutOfGas(OutOfGasError::Basic))
+        );
     }
 }

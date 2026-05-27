@@ -1,5 +1,5 @@
 //! Contains the `[OpHaltReason]` type.
-use revm::context_interface::result::HaltReason;
+use revm::context_interface::result::{HaltReason, HaltReasonTr};
 
 /// Optimism halt reason.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -16,6 +16,8 @@ impl From<HaltReason> for OpHaltReason {
         Self::Base(value)
     }
 }
+
+impl HaltReasonTr for OpHaltReason {}
 
 impl TryFrom<OpHaltReason> for HaltReason {
     type Error = OpHaltReason;
