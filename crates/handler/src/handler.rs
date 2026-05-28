@@ -14,9 +14,7 @@ use context_interface::{
     result::{HaltReasonTr, InvalidHeader, InvalidTransaction, ResultGas},
     Cfg, ContextTr, Database, JournalTr, Transaction,
 };
-use interpreter::{
-    interpreter_action::FrameInit, Gas, InitialAndFloorGas, InstructionResult, SharedMemory,
-};
+use interpreter::{interpreter_action::FrameInit, Gas, InitialAndFloorGas, SharedMemory};
 use primitives::U256;
 
 /// Trait for errors that can occur during EVM execution.
@@ -96,10 +94,10 @@ pub trait Handler {
     ///
     /// Returns execution result, error, gas spend and logs.
     #[inline]
-    fn run(&mut self, evm: &mut Self::Evm) -> Result<ExecutionResult<Self::HaltReason>, Self::Error>
-    where
-        Self::HaltReason: From<InstructionResult>,
-    {
+    fn run(
+        &mut self,
+        evm: &mut Self::Evm,
+    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error> {
         // Run inner handler and catch all errors to handle cleanup.
         match self.run_without_catch_error(evm) {
             Ok(output) => Ok(output),
@@ -125,10 +123,7 @@ pub trait Handler {
     fn run_system_call(
         &mut self,
         evm: &mut Self::Evm,
-    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error>
-    where
-        Self::HaltReason: From<InstructionResult>,
-    {
+    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error> {
         // dummy values that are not used.
         let init_and_floor_gas = InitialAndFloorGas::new(0, 0);
         // call execution and than output.
@@ -155,10 +150,7 @@ pub trait Handler {
     fn run_without_catch_error(
         &mut self,
         evm: &mut Self::Evm,
-    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error>
-    where
-        Self::HaltReason: From<InstructionResult>,
-    {
+    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error> {
         let mut init_and_floor_gas = self.validate(evm)?;
         let eip7702_refund = self.pre_execution(evm, &mut init_and_floor_gas)?;
         // Regular refund is returned from pre_execution after state gas split is applied
@@ -513,10 +505,7 @@ pub trait Handler {
         evm: &mut Self::Evm,
         result: <<Self::Evm as EvmTr>::Frame as FrameTr>::FrameResult,
         result_gas: ResultGas,
-    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error>
-    where
-        Self::HaltReason: From<InstructionResult>,
-    {
+    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error> {
         take_error::<Self::Error, _>(evm.ctx().error())?;
 
         let exec_result = post_execution::output(evm.ctx(), result, result_gas);

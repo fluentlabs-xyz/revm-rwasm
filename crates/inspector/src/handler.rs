@@ -44,10 +44,7 @@ where
     fn inspect_run(
         &mut self,
         evm: &mut Self::Evm,
-    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error>
-    where
-        Self::HaltReason: From<InstructionResult>,
-    {
+    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error> {
         match self.inspect_run_without_catch_error(evm) {
             Ok(output) => Ok(output),
             Err(e) => self.catch_error(evm, e),
@@ -60,10 +57,7 @@ where
     fn inspect_run_without_catch_error(
         &mut self,
         evm: &mut Self::Evm,
-    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error>
-    where
-        Self::HaltReason: From<InstructionResult>,
-    {
+    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error> {
         let mut init_and_floor_gas = self.validate(evm)?;
         // pre_execution now applies the EIP-7702 state gas refund split to init_and_floor_gas
         // and returns the regular refund portion
@@ -154,10 +148,7 @@ where
     fn inspect_run_system_call(
         &mut self,
         evm: &mut Self::Evm,
-    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error>
-    where
-        Self::HaltReason: From<InstructionResult>,
-    {
+    ) -> Result<ExecutionResult<Self::HaltReason>, Self::Error> {
         // dummy values that are not used.
         let init_and_floor_gas = InitialAndFloorGas::new(0, 0);
         // call execution with inspection and then output.
