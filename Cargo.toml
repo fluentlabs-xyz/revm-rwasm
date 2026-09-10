@@ -127,7 +127,7 @@ thiserror = { version = "2.0", default-features = false }
 walkdir = "2.5"
 
 # rwasm
-rwasm = { version = "0.4.3", default-features = false }
+rwasm = { version = "0.5.0", default-features = false }
 
 [workspace.package]
 license = "MIT"
