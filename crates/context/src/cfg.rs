@@ -443,8 +443,9 @@ impl<SPEC: Into<SpecId> + Clone> Cfg for CfgEnv<SPEC> {
                 },
             )
         } else {
-            // Note: Tx gas cap is not supported on Fluent
-            u64::MAX
+            // Fluent has no fixed EIP-7825 cap: WASM execution can need more than 2^24 gas.
+            // The chain sets its own cap through `tx_gas_limit_cap`; without one there is no cap.
+            self.tx_gas_limit_cap.unwrap_or(u64::MAX)
         }
     }
 
@@ -612,5 +613,26 @@ mod test {
     fn blob_max_and_target_count() {
         let cfg: CfgEnv = Default::default();
         assert_eq!(cfg.max_blobs_per_tx(), None);
+    }
+
+    #[test]
+    fn tx_gas_limit_cap_follows_configuration_without_legacy_bytecode() {
+        let mut cfg: CfgEnv = Default::default();
+        assert!(!cfg.legacy_bytecode_enabled);
+        assert_eq!(cfg.tx_gas_limit_cap(), u64::MAX);
+        cfg.tx_gas_limit_cap = Some(100_000_000);
+        assert_eq!(cfg.tx_gas_limit_cap(), 100_000_000);
+    }
+
+    #[test]
+    fn tx_gas_limit_cap_defaults_to_eip7825_with_legacy_bytecode() {
+        let mut cfg: CfgEnv = CfgEnv::new_with_spec(SpecId::OSAKA);
+        cfg.legacy_bytecode_enabled = true;
+        assert_eq!(
+            cfg.tx_gas_limit_cap(),
+            primitives::eip7825::LEGACY_TX_GAS_LIMIT_CAP
+        );
+        cfg.tx_gas_limit_cap = Some(100_000_000);
+        assert_eq!(cfg.tx_gas_limit_cap(), 100_000_000);
     }
 }
