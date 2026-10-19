@@ -33,7 +33,7 @@ pub fn keccak256<IT: ITy, H: Host + ?Sized>(context: Ictx<'_, H, IT>) -> Result 
             from,
             len,
         )?;
-        primitives::keccak256(context.interpreter.memory.slice_len(from, len).as_ref())
+        primitives::keccak256::<&[u8]>(context.interpreter.memory.slice_len(from, len).as_ref())
     };
     *top = hash.into();
     Ok(())

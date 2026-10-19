@@ -138,6 +138,9 @@ walkdir = "2.5"
 similar-asserts = "2.0"
 insta = { version = "1.43", default-features = false, features = ["json"] }
 
+# rwasm
+rwasm = { version = "0.7.1", default-features = false }
+
 [workspace.package]
 readme = "README.md"
 license = "MIT"

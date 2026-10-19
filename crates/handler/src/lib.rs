@@ -28,6 +28,8 @@ pub mod pre_execution;
 mod precompile_provider;
 /// System call implementations for special EVM operations.
 pub mod system_call;
+/// System interruption handling and recovery.
+pub mod system_interruption;
 /// Transaction and environment validation utilities.
 pub mod validation;
 

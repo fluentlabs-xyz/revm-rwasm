@@ -6,7 +6,7 @@ use context_interface::{
 };
 use core::cmp;
 use interpreter::InitialAndFloorGas;
-use primitives::{eip4844, hardfork::SpecId, B256};
+use primitives::{eip4844, hardfork::SpecId, wasm::wasm_max_code_size, B256};
 
 /// Validates the execution environment including block and transaction parameters.
 pub fn validate_env<CTX: ContextTr, ERROR: From<InvalidHeader> + From<InvalidTransaction>>(
@@ -147,8 +147,10 @@ pub fn validate_tx_env<CTX: ContextTr>(
         }
     }
 
-    // tx gas cap is not enforced if state gas is enabled.
-    if !context.cfg().is_amsterdam_eip8037_enabled() {
+    // EIP-8037 may split Ethereum state gas out of the execution cap. Fluent
+    // still enforces its configured transaction cap against the complete gas limit.
+    if !context.cfg().is_legacy_bytecode_enabled() || !context.cfg().is_amsterdam_eip8037_enabled()
+    {
         // EIP-7825: Transaction Gas Limit Cap
         let cap = context.cfg().tx_gas_limit_cap();
         if tx.gas_limit() > cap {
@@ -219,12 +221,13 @@ pub fn validate_tx_env<CTX: ContextTr>(
         return Err(InvalidTransaction::CallerGasLimitMoreThanBlock);
     }
 
-    // EIP-3860: Limit and meter initcode. Still valid with EIP-7907 and increase of initcode size.
-    if spec_id.is_enabled_in(SpecId::SHANGHAI)
-        && tx.kind().is_create()
-        && tx.input().len() > context.cfg().max_initcode_size()
-    {
-        return Err(InvalidTransaction::CreateInitCodeSizeLimit);
+    // EIP-3860: Limit and meter initcode
+    if spec_id.is_enabled_in(SpecId::SHANGHAI) && tx.kind().is_create() {
+        let max_initcode_size = wasm_max_code_size(tx.input())
+            .unwrap_or_else(|| context.cfg().max_code_size().saturating_mul(2));
+        if tx.input().len() > max_initcode_size {
+            return Err(InvalidTransaction::CreateInitCodeSizeLimit);
+        }
     }
 
     // Check that the transaction's nonce is not at the maximum value.
@@ -248,6 +251,7 @@ pub fn validate_initial_tx_gas(
     is_amsterdam_eip8037_enabled: bool,
     tx_gas_limit_cap: u64,
     eip2780: Option<context_interface::cfg::gas_params::Eip2780TxInfo>,
+    enable_legacy_bytecode: bool,
 ) -> Result<InitialAndFloorGas, InvalidTransaction> {
     validate_initial_tx_gas_with_gas_params(
         tx,
@@ -257,6 +261,7 @@ pub fn validate_initial_tx_gas(
         is_amsterdam_eip8037_enabled,
         tx_gas_limit_cap,
         eip2780,
+        enable_legacy_bytecode,
     )
 }
 
@@ -270,6 +275,7 @@ pub fn validate_initial_tx_gas_with_gas_params(
     is_amsterdam_eip8037_enabled: bool,
     tx_gas_limit_cap: u64,
     eip2780: Option<context_interface::cfg::gas_params::Eip2780TxInfo>,
+    enable_legacy_bytecode: bool,
 ) -> Result<InitialAndFloorGas, InvalidTransaction> {
     let mut gas = gas_params.initial_tx_gas_for_tx(&tx, eip2780);
 
@@ -291,7 +297,10 @@ pub fn validate_initial_tx_gas_with_gas_params(
 
     // EIP-7623: Increase calldata cost
     // floor gas should be less than gas limit.
-    if spec.is_enabled_in(SpecId::PRAGUE) && gas.floor_gas() > tx.gas_limit() {
+    if enable_legacy_bytecode
+        && spec.is_enabled_in(SpecId::PRAGUE)
+        && gas.floor_gas() > tx.gas_limit()
+    {
         return Err(InvalidTransaction::GasFloorMoreThanGasLimit {
             gas_floor: gas.floor_gas(),
             gas_limit: tx.gas_limit(),
@@ -325,6 +334,68 @@ mod tests {
     use database::{CacheDB, EmptyDB};
     use primitives::{address, eip3860, eip7954, hardfork::SpecId, Bytes, TxKind, B256};
     use state::{AccountInfo, Bytecode};
+
+    #[test]
+    fn fluent_configured_gas_cap_applies_with_state_gas_enabled() {
+        let mut ctx = Context::mainnet()
+            .modify_cfg_chained(|cfg| {
+                cfg.set_spec_and_mainnet_gas_params(SpecId::AMSTERDAM);
+                cfg.legacy_bytecode_enabled = false;
+                cfg.tx_gas_limit_cap = Some(100_000_000);
+            })
+            .modify_block_chained(|block| block.gas_limit = 200_000_000)
+            .modify_tx_chained(|tx| tx.gas_limit = 100_000_001);
+        assert!(ctx.cfg.enable_amsterdam_eip8037);
+        assert_eq!(
+            super::validate_tx_env(&mut ctx, SpecId::AMSTERDAM),
+            Err(InvalidTransaction::TxGasLimitGreaterThanCap {
+                gas_limit: 100_000_001,
+                cap: 100_000_000,
+            })
+        );
+        ctx.tx.gas_limit = 100_000_000;
+        assert_eq!(super::validate_tx_env(&mut ctx, SpecId::AMSTERDAM), Ok(()));
+    }
+
+    #[test]
+    fn fluent_eip7623_disabled_does_not_apply_calldata_floor() {
+        let tx = TxEnv::builder()
+            .gas_limit(80_000)
+            .data(Bytes::from(vec![1; 3000]))
+            .build()
+            .unwrap();
+        let legacy =
+            super::validate_initial_tx_gas(&tx, SpecId::PRAGUE, false, false, u64::MAX, None, true);
+        assert!(matches!(
+            legacy,
+            Err(InvalidTransaction::GasFloorMoreThanGasLimit { .. })
+        ));
+        let fluent =
+            super::validate_initial_tx_gas(&tx, SpecId::PRAGUE, true, false, u64::MAX, None, false)
+                .unwrap();
+        assert_eq!(fluent.floor_gas(), 0);
+        assert_eq!(fluent.initial_total_gas(), 69_000);
+    }
+
+    #[test]
+    fn fluent_initial_gas_honours_custom_gas_parameters() {
+        use context_interface::cfg::gas_params::{GasId, GasParams};
+        let tx = TxEnv::builder().gas_limit(100_000).build().unwrap();
+        let mut params = GasParams::new_spec(SpecId::OSAKA);
+        params.override_gas([(GasId::tx_base_stipend(), 37_000)]);
+        let gas = super::validate_initial_tx_gas_with_gas_params(
+            &tx,
+            SpecId::OSAKA,
+            &params,
+            true,
+            false,
+            u64::MAX,
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(gas.initial_total_gas(), 37_000);
+    }
 
     fn deploy_contract(
         bytecode: Bytes,

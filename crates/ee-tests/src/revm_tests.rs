@@ -773,7 +773,7 @@ fn test_custom_opcode_transaction() {
 
     // Build EVM with custom instruction set
     let ctx = Context::mainnet()
-        .with_cfg(CfgEnv::new_with_spec(SpecId::CANCUN))
+        .with_cfg(CfgEnv::new_with_spec(SpecId::CANCUN).enable_legacy_bytecode())
         .with_db(db);
 
     let mut instructions = EthInstructions::new_mainnet_with_spec(SpecId::CANCUN);

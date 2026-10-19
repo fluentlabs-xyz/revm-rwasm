@@ -419,10 +419,11 @@ mod tests {
     fn account_info_inline_size() {
         assert_eq!(
             size_of::<AccountInfo>(),
+            // Fluent's bytecode enum includes a discriminant alongside its Arc.
             if cfg!(feature = "account-ext") {
-                96
+                104
             } else {
-                88
+                96
             }
         );
     }

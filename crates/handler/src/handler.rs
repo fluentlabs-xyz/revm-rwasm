@@ -409,6 +409,7 @@ pub trait Handler {
             ctx.cfg().is_amsterdam_eip8037_enabled(),
             ctx.cfg().tx_gas_limit_cap(),
             eip2780,
+            ctx.cfg().is_legacy_bytecode_enabled(),
         )?;
 
         Ok(gas)

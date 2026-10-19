@@ -96,10 +96,13 @@ pub trait InspectorEvmTr:
 
     /// Initializes the frame for the given frame input. Frame is pushed to the frame stack.
     #[inline]
-    fn inspect_frame_init(
-        &mut self,
+    fn inspect_frame_init<'a>(
+        &'a mut self,
         mut frame_init: <Self::Frame as FrameTr>::FrameInit,
-    ) -> Result<FrameInitResult<'_, Self::Frame>, ContextDbError<Self::Context>> {
+    ) -> Result<FrameInitResult<'a, Self::Frame>, ContextDbError<Self::Context>>
+    where
+        <Self as InspectorEvmTr>::Inspector: 'a,
+    {
         let (ctx, inspector) = self.ctx_inspector();
         if let Some(mut output) = frame_start(ctx, inspector, &mut frame_init.frame_input) {
             frame_end(ctx, inspector, &frame_init.frame_input, &mut output);

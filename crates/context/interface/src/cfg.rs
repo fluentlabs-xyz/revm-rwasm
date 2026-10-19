@@ -106,6 +106,9 @@ pub trait Cfg {
     /// execution charges are applied for empty recipients with value and
     /// EIP-7702-delegated recipients.
     fn is_amsterdam_eip2780_enabled(&self) -> bool;
+
+    /// Returns whether legacy bytecode creation is enabled.
+    fn is_legacy_bytecode_enabled(&self) -> bool;
 }
 
 /// What bytecode analysis to perform

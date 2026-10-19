@@ -10,3 +10,7 @@
 /// being large enough to accommodate most complex transactions, including contract deployments and advanced DeFi interactions.
 /// This value represents approximately half of typical block sizes (30-40 million gas), ensuring multiple transactions can fit within each block.
 pub const TX_GAS_LIMIT_CAP: u64 = 16_777_216;
+
+/// Ethereum's legacy EIP-7825 cap. Fluent selects its own cap through the
+/// context configuration instead of changing the canonical protocol constant.
+pub const LEGACY_TX_GAS_LIMIT_CAP: u64 = TX_GAS_LIMIT_CAP;

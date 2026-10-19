@@ -54,6 +54,8 @@ pub trait InputsTr {
     fn call_value(&self) -> U256;
     /// Returns the call depth of the frame this interpreter executes (0 for the first frame).
     fn depth(&self) -> usize;
+    /// Returns the owner of the account for system runtimes.
+    fn account_owner_address(&self) -> Option<Address>;
 }
 
 /// Trait needed for legacy bytecode.

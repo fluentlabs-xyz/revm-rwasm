@@ -15,6 +15,9 @@
 #[cfg(not(feature = "std"))]
 extern crate alloc as std;
 
+#[cfg(feature = "std")]
+use once_cell as _;
+
 pub mod constants;
 pub mod eip170;
 pub mod eip2780;
@@ -31,6 +34,9 @@ pub mod eip8038;
 pub mod hardfork;
 pub mod hints_util;
 mod once_lock;
+
+/// An additional module for Wasm-related constants
+pub mod wasm;
 
 pub use constants::*;
 pub use once_lock::OnceLock;

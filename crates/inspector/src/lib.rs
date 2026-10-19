@@ -5,6 +5,9 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(all(feature = "serde", not(feature = "tracer")))]
+use serde as _;
+
 mod count_inspector;
 #[cfg(feature = "tracer")]
 mod eip3155;

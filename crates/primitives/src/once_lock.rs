@@ -47,10 +47,24 @@ mod no_std_impl {
             self.inner.set(Box::new(value)).map_err(|e| *e)
         }
     }
+
+    impl<T: Clone> Clone for OnceLock<T> {
+        fn clone(&self) -> Self {
+            Self {
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    impl<T: PartialEq> PartialEq for OnceLock<T> {
+        #[inline]
+        fn eq(&self, other: &OnceLock<T>) -> bool {
+            self.get() == other.get()
+        }
+    }
+    impl<T: Eq> Eq for OnceLock<T> {}
 }
 
-#[cfg(feature = "std")]
-use once_cell as _;
 #[cfg(feature = "std")]
 pub use std::sync::OnceLock;
 

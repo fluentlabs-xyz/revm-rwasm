@@ -20,6 +20,17 @@ pub struct InputsImpl {
     pub call_value: U256,
     /// Call depth of the frame this interpreter executes (0 for the first frame).
     pub depth: usize,
+    /// Owner of this account when executing a system runtime.
+    pub account_owner: Option<Address>,
+}
+
+impl InputsImpl {
+    /// Returns the effective bytecode address, including a system runtime owner.
+    pub fn effective_bytecode_address(&self) -> Address {
+        self.account_owner
+            .or(self.bytecode_address)
+            .unwrap_or(self.target_address)
+    }
 }
 
 impl InputsTr for InputsImpl {
@@ -31,12 +42,12 @@ impl InputsTr for InputsImpl {
         self.depth
     }
 
-    fn caller_address(&self) -> Address {
-        self.caller_address
-    }
-
     fn bytecode_address(&self) -> Option<&Address> {
         self.bytecode_address.as_ref()
+    }
+
+    fn caller_address(&self) -> Address {
+        self.caller_address
     }
 
     fn input(&self) -> &CallInput {
@@ -45,5 +56,9 @@ impl InputsTr for InputsImpl {
 
     fn call_value(&self) -> U256 {
         self.call_value
+    }
+
+    fn account_owner_address(&self) -> Option<Address> {
+        self.account_owner
     }
 }
